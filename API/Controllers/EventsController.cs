@@ -123,7 +123,7 @@ namespace EventWithMongo.Controllers
 
             await _service.UpdateAsync(id, existing);
 
-            return NoContent();
+            return Ok("Etkinlik güncellendi");
         }
 
         // ✅ Etkinliği sil
@@ -134,7 +134,7 @@ namespace EventWithMongo.Controllers
             if (existing == null) return NotFound();
 
             await _service.DeleteAsync(id);
-            return NoContent();
+            return Ok("Etkinlik silindi");
         }
 
         // ✅ Yakındaki etkinlikleri bul

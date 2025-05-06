@@ -40,3 +40,4 @@
 /Users/onur/Desktop/etkinlik/API/bin/Debug/net9.0/Swashbuckle.AspNetCore.Swagger.dll
 /Users/onur/Desktop/etkinlik/API/bin/Debug/net9.0/Swashbuckle.AspNetCore.SwaggerGen.dll
 /Users/onur/Desktop/etkinlik/API/bin/Debug/net9.0/Swashbuckle.AspNetCore.SwaggerUI.dll
+/Users/onur/Desktop/etkinlik/API/obj/Debug/net9.0/API.sourcelink.json
