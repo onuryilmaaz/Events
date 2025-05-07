@@ -1,9 +1,9 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace EventWithMongo.Models
+namespace API.Models
 {
-    public class EventWithLocation
+    public class Events
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
@@ -16,7 +16,8 @@ namespace EventWithMongo.Models
         public string Category { get; set; }
         public Geometry Geometry { get; set; }
         public Properties Properties { get; set; }
-        public string ImageUrl { get; set; } // ✅ Yeni eklenen resim alanı
+        public IFormFile ImageFile { get; set; }
+        public string ImageUrl { get; set; }
     }
 
     public class Geometry

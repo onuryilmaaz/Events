@@ -41,3 +41,5 @@
 /Users/onur/Desktop/etkinlik/API/bin/Debug/net9.0/Swashbuckle.AspNetCore.SwaggerGen.dll
 /Users/onur/Desktop/etkinlik/API/bin/Debug/net9.0/Swashbuckle.AspNetCore.SwaggerUI.dll
 /Users/onur/Desktop/etkinlik/API/obj/Debug/net9.0/API.sourcelink.json
+/Users/onur/Desktop/etkinlik/API/bin/Debug/net9.0/CloudinaryDotNet.dll
+/Users/onur/Desktop/etkinlik/API/bin/Debug/net9.0/Newtonsoft.Json.dll

@@ -1,4 +1,4 @@
-namespace EventWithMongo.DTOs
+namespace API.DTOs
 {
     public class EventResponseDto
     {

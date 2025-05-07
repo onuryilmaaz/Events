@@ -1,20 +1,24 @@
 using Microsoft.AspNetCore.Mvc;
-using EventWithMongo.Models;
-using EventWithMongo.Services;
-using EventWithMongo.DTOs;
+using API.Models;
+using API.Services;
+using API.DTOs;
 
-namespace EventWithMongo.Controllers
+namespace API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
     public class EventsController : ControllerBase
     {
         private readonly EventsService _service;
+        private readonly ImageService _imageService;
 
-        public EventsController(EventsService service) =>
+        public EventsController(EventsService service, ImageService imageService)
+        {
             _service = service;
+            _imageService = imageService;
+        }
 
-        // ✅ Tüm etkinlikleri listele
+        #region Etkinlikleri Listele
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -36,8 +40,9 @@ namespace EventWithMongo.Controllers
 
             return Ok(responseList);
         }
+        #endregion
 
-        // ✅ ID'ye göre etkinliği getir
+        #region ID'ye Göre Etkinlik Getir
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
@@ -61,12 +66,16 @@ namespace EventWithMongo.Controllers
 
             return Ok(response);
         }
+        #endregion
 
-        // ✅ Yeni etkinlik oluştur
+        #region Etkinlik Oluştur
         [HttpPost]
-        public async Task<IActionResult> Create(EventCreateDto dto)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> Create([FromForm] EventCreateDto dto)
         {
-            var @event = new EventWithLocation
+            var imageUrl = await _imageService.UploadImageAsync(dto.ImageFile);
+
+            var @event = new Events
             {
                 EventTitle = dto.EventTitle,
                 Decs = dto.Decs,
@@ -83,10 +92,11 @@ namespace EventWithMongo.Controllers
                     Address = dto.Address,
                     Phone = dto.Phone
                 },
-                ImageUrl = dto.ImageUrl
+                ImageUrl = imageUrl
             };
 
             await _service.CreateAsync(@event);
+
             return CreatedAtAction(nameof(GetById), new { id = @event.Id }, new EventResponseDto
             {
                 Id = @event.Id,
@@ -102,10 +112,12 @@ namespace EventWithMongo.Controllers
                 ImageUrl = @event.ImageUrl
             });
         }
+        #endregion
 
-        // ✅ Etkinliği güncelle
+        #region Etkinlik Güncelle
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, EventUpdateDto dto)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> Update(string id, [FromForm] EventUpdateDto dto)
         {
             var existing = await _service.GetByIdAsync(id);
             if (existing == null) return NotFound();
@@ -119,14 +131,20 @@ namespace EventWithMongo.Controllers
             existing.Properties.Name = dto.Name;
             existing.Properties.Address = dto.Address;
             existing.Properties.Phone = dto.Phone;
-            existing.ImageUrl = dto.ImageUrl;
+
+            if (dto.ImageFile != null)
+            {
+                var imageUrl = await _imageService.UploadImageAsync(dto.ImageFile);
+                existing.ImageUrl = imageUrl;
+            }
 
             await _service.UpdateAsync(id, existing);
 
             return Ok("Etkinlik güncellendi");
         }
+        #endregion
 
-        // ✅ Etkinliği sil
+        #region Etkinlik Sil
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
@@ -136,8 +154,9 @@ namespace EventWithMongo.Controllers
             await _service.DeleteAsync(id);
             return Ok("Etkinlik silindi");
         }
+        #endregion
 
-        // ✅ Yakındaki etkinlikleri bul
+        #region Yakındaki etkinlikleri bul
         [HttpGet("nearby")]
         public async Task<IActionResult> GetNearby(
             [FromQuery] double longitude,
@@ -163,5 +182,6 @@ namespace EventWithMongo.Controllers
 
             return Ok(responseList);
         }
+        #endregion
     }
 }

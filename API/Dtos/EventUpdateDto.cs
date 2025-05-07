@@ -1,4 +1,4 @@
-namespace EventWithMongo.DTOs
+namespace API.DTOs
 {
     public class EventUpdateDto
     {
@@ -7,8 +7,6 @@ namespace EventWithMongo.DTOs
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public string Category { get; set; }
-
-        // Geometry bilgisi (iç içe)
         public double[] Coordinates { get; set; }
 
         // Properties bilgisi (iç içe)
@@ -16,6 +14,7 @@ namespace EventWithMongo.DTOs
         public string Address { get; set; }
         public string Phone { get; set; }
 
-        public string ImageUrl { get; set; }
+        public IFormFile ImageFile { get; set; }
+        public string ExistingImageUrl { get; set; }
     }
 }
