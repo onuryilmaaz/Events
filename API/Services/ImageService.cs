@@ -1,5 +1,6 @@
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace API.Services
 {
@@ -15,7 +16,7 @@ namespace API.Services
         public async Task<string> UploadImageAsync(IFormFile file)
         {
             if (file.Length == 0)
-                return null;
+                return ("File is empty");
 
             await using var stream = file.OpenReadStream();
 

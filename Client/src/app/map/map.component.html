@@ -1,1 +1,46 @@
-<div id="map" style="height: 600px; width: 100%"></div>
+<main>
+  <div class="store-list">
+    <div class="heading">
+      <h2>Etkinlik Listesi</h2>
+    </div>
+    <ul class="list">
+      <li *ngFor="let store of storeList; let i = index">
+        <div class="shop-item">
+          <a href="#" (click)="flyToStore(store); $event.preventDefault()">
+            {{ store.properties.name }}
+          </a>
+          <p>{{ store.properties.address }}</p>
+        </div>
+      </li>
+    </ul>
+  </div>
+  <div id="map"></div>
+  <div id="event-form-popup" class="popup-form" style="display: none">
+    <button
+      style="float: right"
+      onclick="this.parentElement.style.display='none'"
+    >
+      ✖
+    </button>
+    <form id="eventForm">
+      <h3>Etkinlik Oluştur</h3>
+      <input
+        type="text"
+        name="eventTitle"
+        placeholder="Etkinlik Başlığı"
+        required
+      />
+      <textarea name="decs" placeholder="Açıklama" required></textarea>
+      <input type="text" name="category" placeholder="Kategori" required />
+      <input type="date" name="startDate" required />
+      <input type="date" name="endDate" required />
+      <input type="text" name="name" placeholder="İsim" required />
+      <input type="text" name="address" placeholder="Adres" required />
+      <input type="text" name="phone" placeholder="Telefon" required />
+      <input type="file" name="imageFile" accept="image/*" required />
+      <input type="hidden" name="lat" />
+      <input type="hidden" name="lng" />
+      <button type="submit">Kaydet</button>
+    </form>
+  </div>
+</main>

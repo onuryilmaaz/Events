@@ -73,7 +73,22 @@ namespace API.Controllers
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> Create([FromForm] EventCreateDto dto)
         {
-            var imageUrl = await _imageService.UploadImageAsync(dto.ImageFile);
+            // Verilerin doğrulanması
+            if (dto.StartDate >= dto.EndDate)
+            {
+                return BadRequest(new { message = "Başlangıç tarihi bitiş tarihinden önce olmalıdır." });
+            }
+
+            // Resim yükleme işlemi
+            string imageUrl = null;
+            try
+            {
+                imageUrl = await _imageService.UploadImageAsync(dto.ImageFile);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Resim yükleme başarısız oldu", error = ex.Message });
+            }
 
             var @event = new Events
             {
@@ -95,8 +110,16 @@ namespace API.Controllers
                 ImageUrl = imageUrl
             };
 
-            await _service.CreateAsync(@event);
+            try
+            {
+                await _service.CreateAsync(@event);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Etkinlik oluşturulamadı", error = ex.Message });
+            }
 
+            // Başarıyla oluşturulmuş etkinlik yanıtı
             return CreatedAtAction(nameof(GetById), new { id = @event.Id }, new EventResponseDto
             {
                 Id = @event.Id,
