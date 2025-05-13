@@ -39,6 +39,43 @@ export class MapComponent implements OnInit {
     }).addTo(this.map);
   }
 
+  formatExpiryDate(expiryDate: string | Date | undefined): string {
+    if (!expiryDate) return 'Süre belirtilmemiş';
+
+    const date = expiryDate instanceof Date ? expiryDate : new Date(expiryDate);
+
+    if (isNaN(date.getTime())) {
+      console.warn('Geçersiz tarih:', expiryDate);
+      return 'Geçersiz tarih';
+    }
+
+    return date.toLocaleDateString('tr-TR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'UTC',
+    });
+  }
+
+  previewUrl: string | ArrayBuffer | null = null;
+
+  onImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        this.previewUrl = reader.result;
+      };
+
+      reader.readAsDataURL(file);
+    }
+  }
+
   private fetchEvents(): void {
     this.eventService.getEvents().subscribe({
       next: (data) => {
@@ -49,6 +86,9 @@ export class MapComponent implements OnInit {
             coordinates: [event.coordinates[0], event.coordinates[1]],
           },
           properties: {
+            id: event.id,
+            category: event.category,
+            eventTitle: event.eventTitle,
             name: event.name,
             decs: event.decs,
             address: event.address,
@@ -85,10 +125,19 @@ export class MapComponent implements OnInit {
           <h4>${shop.properties.name}</h4>
           <p>${shop.properties.decs}</p>
           <p>${shop.properties.address}</p>
-          <p>${shop.properties.startDate} - ${shop.properties.endDate}</p>
-          <img src="${shop.properties.imageUrl}" alt="${shop.properties.name}" style="width: 100%; height: auto;">
+          <p>${this.formatExpiryDate(
+            shop.properties.startDate
+          )}  - ${this.formatExpiryDate(shop.properties.endDate)}</p>
+          <img src="${
+            shop.properties.imageUrl == null
+              ? 'noImage.jpg'
+              : shop.properties.imageUrl
+          }
+            " style="width: 100%; height: auto;">
           <div class="phone-number">
-              <a href="tel:${shop.properties.phone}">${shop.properties.phone}</a>
+              <a href="tel:${shop.properties.phone}">${
+      shop.properties.phone
+    }</a>
           </div>
       </div>
     `;
