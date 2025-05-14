@@ -1,4 +1,4 @@
-<main class="d-flex">
+<!-- <main class="d-flex">
   <div
     class="bg-light border-end overflow-auto"
     style="width: 25%; height: 100vh; position: relative"
@@ -14,32 +14,38 @@
             class="text-decoration-none text-success fw-bold fs-5"
             (click)="flyToStore(store); $event.preventDefault()"
           >
-            {{ store.properties.eventTitle }}
+            {{ store.eventTitle }}
           </a>
           <br />
           <div class="d-flex justify-content-center">
             <img
               class="img-fluid rounded-4 mt-2"
-              src="{{
-                store.properties.imageUrl == null
-                  ? 'noImage.jpg'
-                  : store.properties.imageUrl
-              }}
+              src="{{ store.imageUrl == null ? 'noImage.jpg' : store.imageUrl }}
             "
               width="300px"
               height="150px"
             />
           </div>
           <p class="text-secondary m-0">
-            {{ store.properties.decs }}
+            {{ store.decs }}
           </p>
           <p class="text-secondary small m-0">
-            {{ formatExpiryDate(store.properties.startDate) }} -
-            {{ formatExpiryDate(store.properties.endDate) }}
+            {{ formatExpiryDate(store.startDate) }} -
+            {{ formatExpiryDate(store.endDate) }}
           </p>
           <div class="d-flex justify-content-center mt-2">
-            <button class="btn btn-outline-danger mx-2">Sil</button>
-            <button class="btn btn-outline-warning mx-2">Güncelle</button>
+            <button
+              class="btn btn-outline-danger mx-2"
+              (click)="deleteEvent(store.id)"
+            >
+              Sil
+            </button>
+            <button
+              class="btn btn-outline-warning mx-2"
+              (click)="openUpdateForm(store)"
+            >
+              Güncelle
+            </button>
           </div>
         </div>
       </li>
@@ -139,6 +145,148 @@
       <input type="hidden" name="lat" />
       <input type="hidden" name="lng" />
 
+      <button type="submit" class="btn btn-outline-success fw-bold">
+        Kaydet
+      </button>
+    </form>
+  </div>
+</main> -->
+
+<main class="d-flex">
+  <div
+    class="bg-light border-end overflow-auto"
+    style="width: 25%; height: 100vh"
+  >
+    <div class="bg-success text-white text-center sticky-top">
+      <h2 class="p-3 m-0">Etkinlik Listesi</h2>
+    </div>
+    <ul class="list-unstyled p-3">
+      <li *ngFor="let store of storeList">
+        <div class="p-3 rounded-4 shadow-lg mb-3">
+          <a
+            href="#"
+            class="text-decoration-none text-success fw-bold fs-5"
+            (click)="flyToStore(store); $event.preventDefault()"
+          >
+            {{ store.eventTitle }}
+          </a>
+          <div class="d-flex justify-content-center mt-2">
+            <img
+              [src]="store.imageUrl || 'noImage.jpg'"
+              class="img-fluid rounded-4"
+              width="300"
+              height="150"
+            />
+          </div>
+          <p class="text-secondary m-0">{{ store.decs }}</p>
+          <p class="text-secondary small m-0">
+            {{ formatExpiryDate(store.startDate) }} -
+            {{ formatExpiryDate(store.endDate) }}
+          </p>
+          <div class="d-flex justify-content-center mt-2">
+            <button
+              class="btn btn-outline-danger mx-2"
+              (click)="deleteEvent(store.id)"
+            >
+              Sil
+            </button>
+            <button
+              class="btn btn-outline-warning mx-2"
+              (click)="updateEvent(store)"
+            >
+              Güncelle
+            </button>
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div id="map" style="height: 100vh; width: 75%"></div>
+
+  <div
+    id="event-form-popup"
+    class="position-fixed bg-light shadow rounded-4 p-4"
+    style="
+      display: none;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 9999;
+      max-width: 500px;
+      width: 100%;
+    "
+  >
+    <button
+      type="button"
+      class="btn-close float-end"
+      onclick="document.getElementById('event-form-popup').style.display='none'"
+    ></button>
+
+    <h5 class="text-center text-dark mb-4 mt-2">Etkinlik Formu</h5>
+
+    <form id="eventForm" class="d-flex flex-column gap-3">
+      <input
+        type="text"
+        class="form-control"
+        name="eventTitle"
+        placeholder="Etkinlik Başlığı"
+        required
+      />
+      <textarea
+        class="form-control"
+        name="decs"
+        placeholder="Açıklama"
+        rows="3"
+        required
+      ></textarea>
+      <input
+        type="text"
+        class="form-control"
+        name="category"
+        placeholder="Kategori"
+        required
+      />
+      <div class="d-flex gap-2">
+        <input type="date" class="form-control" name="startDate" required />
+        <input type="date" class="form-control" name="endDate" required />
+      </div>
+      <input
+        type="text"
+        class="form-control"
+        name="name"
+        placeholder="İsim"
+        required
+      />
+      <input
+        type="text"
+        class="form-control"
+        name="address"
+        placeholder="Adres"
+        required
+      />
+      <input
+        type="text"
+        class="form-control"
+        name="phone"
+        placeholder="Telefon"
+        required
+      />
+      <input
+        type="file"
+        class="form-control"
+        name="imageFile"
+        accept="image/*"
+        (change)="onImageSelected($event)"
+      />
+      <img
+        *ngIf="previewUrl"
+        [src]="previewUrl"
+        class="img-fluid rounded border"
+        style="max-height: 200px"
+      />
+      <input type="hidden" name="lat" />
+      <input type="hidden" name="lng" />
       <button type="submit" class="btn btn-outline-success fw-bold">
         Kaydet
       </button>
