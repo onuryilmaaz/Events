@@ -1,4 +1,4 @@
-<!-- <main class="d-flex">
+<main class="d-flex">
   <div
     class="bg-light border-end overflow-auto"
     style="width: 25%; height: 100vh; position: relative"
@@ -20,8 +20,9 @@
           <div class="d-flex justify-content-center">
             <img
               class="img-fluid rounded-4 mt-2"
-              src="{{ store.imageUrl == null ? 'noImage.jpg' : store.imageUrl }}
-            "
+              src="{{
+                store.imageUrl == null ? 'noImage.jpg' : store.imageUrl
+              }}"
               width="300px"
               height="150px"
             />
@@ -54,10 +55,9 @@
   <div id="map" style="height: 100vh; width: 75%"></div>
 
   <div
-    id="event-form-popup"
+    *ngIf="showEventFormPopup"
     class="position-fixed bg-light bg-gradient shadow rounded-4 p-4"
     style="
-      display: none;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -72,66 +72,154 @@
       type="button"
       class="btn-close float-end"
       aria-label="Close"
-      onclick="document.getElementById('event-form-popup').style.display='none'"
+      (click)="closePopup()"
     ></button>
 
-    <h5 class="text-center text-dark mb-4 mt-2">Etkinlik Oluştur</h5>
+    <h5 class="text-center text-dark mb-4 mt-2">
+      {{ isUpdateMode ? "Etkinlik Güncelle" : "Etkinlik Oluştur" }}
+    </h5>
 
-    <form id="eventForm" class="d-flex flex-column gap-3">
+    <form
+      [formGroup]="eventForm"
+      (ngSubmit)="onSubmit()"
+      class="d-flex flex-column gap-3"
+    >
       <input
         type="text"
         class="form-control"
-        name="eventTitle"
+        formControlName="eventTitle"
         placeholder="Etkinlik Başlığı"
         required
       />
+      <div
+        *ngIf="
+          eventForm.get('eventTitle')?.invalid &&
+          eventForm.get('eventTitle')?.touched
+        "
+        class="text-danger small"
+      >
+        Etkinlik başlığı gerekli
+      </div>
+
       <textarea
         class="form-control"
-        name="decs"
+        formControlName="decs"
         placeholder="Açıklama"
         rows="3"
         required
       ></textarea>
+      <div
+        *ngIf="eventForm.get('decs')?.invalid && eventForm.get('decs')?.touched"
+        class="text-danger small"
+      >
+        Açıklama gerekli
+      </div>
+
       <input
         type="text"
         class="form-control"
-        name="category"
+        formControlName="category"
         placeholder="Kategori"
         required
       />
-      <div class="d-flex gap-2">
-        <input type="date" class="form-control" name="startDate" required />
-        <input type="date" class="form-control" name="endDate" required />
+      <div
+        *ngIf="
+          eventForm.get('category')?.invalid &&
+          eventForm.get('category')?.touched
+        "
+        class="text-danger small"
+      >
+        Kategori gerekli
       </div>
+
+      <div class="d-flex gap-2">
+        <div class="w-50">
+          <input
+            type="date"
+            class="form-control"
+            formControlName="startDate"
+            required
+          />
+          <div
+            *ngIf="
+              eventForm.get('startDate')?.invalid &&
+              eventForm.get('startDate')?.touched
+            "
+            class="text-danger small"
+          >
+            Başlangıç tarihi gerekli
+          </div>
+        </div>
+        <div class="w-50">
+          <input
+            type="date"
+            class="form-control"
+            formControlName="endDate"
+            required
+          />
+          <div
+            *ngIf="
+              eventForm.get('endDate')?.invalid &&
+              eventForm.get('endDate')?.touched
+            "
+            class="text-danger small"
+          >
+            Bitiş tarihi gerekli
+          </div>
+        </div>
+      </div>
+
       <input
         type="text"
         class="form-control"
-        name="name"
+        formControlName="name"
         placeholder="İsim"
         required
       />
+      <div
+        *ngIf="eventForm.get('name')?.invalid && eventForm.get('name')?.touched"
+        class="text-danger small"
+      >
+        İsim gerekli
+      </div>
+
       <input
         type="text"
         class="form-control"
-        name="address"
+        formControlName="address"
         placeholder="Adres"
         required
       />
+      <div
+        *ngIf="
+          eventForm.get('address')?.invalid && eventForm.get('address')?.touched
+        "
+        class="text-danger small"
+      >
+        Adres gerekli
+      </div>
+
       <input
         type="text"
         class="form-control"
-        name="phone"
+        formControlName="phone"
         placeholder="Telefon"
         required
       />
+      <div
+        *ngIf="
+          eventForm.get('phone')?.invalid && eventForm.get('phone')?.touched
+        "
+        class="text-danger small"
+      >
+        Telefon gerekli
+      </div>
 
       <input
         type="file"
         class="form-control"
-        name="imageFile"
-        accept="image/*"
         (change)="onImageSelected($event)"
-        required
+        accept="image/*"
       />
 
       <img
@@ -142,153 +230,21 @@
         style="max-height: 200px; margin-top: 10px"
       />
 
-      <input type="hidden" name="lat" />
-      <input type="hidden" name="lng" />
+      <input type="hidden" formControlName="lat" />
+      <input type="hidden" formControlName="lng" />
 
-      <button type="submit" class="btn btn-outline-success fw-bold">
-        Kaydet
-      </button>
-    </form>
-  </div>
-</main> -->
-
-<main class="d-flex">
-  <div
-    class="bg-light border-end overflow-auto"
-    style="width: 25%; height: 100vh"
-  >
-    <div class="bg-success text-white text-center sticky-top">
-      <h2 class="p-3 m-0">Etkinlik Listesi</h2>
-    </div>
-    <ul class="list-unstyled p-3">
-      <li *ngFor="let store of storeList">
-        <div class="p-3 rounded-4 shadow-lg mb-3">
-          <a
-            href="#"
-            class="text-decoration-none text-success fw-bold fs-5"
-            (click)="flyToStore(store); $event.preventDefault()"
-          >
-            {{ store.eventTitle }}
-          </a>
-          <div class="d-flex justify-content-center mt-2">
-            <img
-              [src]="store.imageUrl || 'noImage.jpg'"
-              class="img-fluid rounded-4"
-              width="300"
-              height="150"
-            />
-          </div>
-          <p class="text-secondary m-0">{{ store.decs }}</p>
-          <p class="text-secondary small m-0">
-            {{ formatExpiryDate(store.startDate) }} -
-            {{ formatExpiryDate(store.endDate) }}
-          </p>
-          <div class="d-flex justify-content-center mt-2">
-            <button
-              class="btn btn-outline-danger mx-2"
-              (click)="deleteEvent(store.id)"
-            >
-              Sil
-            </button>
-            <button
-              class="btn btn-outline-warning mx-2"
-              (click)="updateEvent(store)"
-            >
-              Güncelle
-            </button>
-          </div>
-        </div>
-      </li>
-    </ul>
-  </div>
-
-  <div id="map" style="height: 100vh; width: 75%"></div>
-
-  <div
-    id="event-form-popup"
-    class="position-fixed bg-light shadow rounded-4 p-4"
-    style="
-      display: none;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 9999;
-      max-width: 500px;
-      width: 100%;
-    "
-  >
-    <button
-      type="button"
-      class="btn-close float-end"
-      onclick="document.getElementById('event-form-popup').style.display='none'"
-    ></button>
-
-    <h5 class="text-center text-dark mb-4 mt-2">Etkinlik Formu</h5>
-
-    <form id="eventForm" class="d-flex flex-column gap-3">
-      <input
-        type="text"
-        class="form-control"
-        name="eventTitle"
-        placeholder="Etkinlik Başlığı"
-        required
-      />
-      <textarea
-        class="form-control"
-        name="decs"
-        placeholder="Açıklama"
-        rows="3"
-        required
-      ></textarea>
-      <input
-        type="text"
-        class="form-control"
-        name="category"
-        placeholder="Kategori"
-        required
-      />
-      <div class="d-flex gap-2">
-        <input type="date" class="form-control" name="startDate" required />
-        <input type="date" class="form-control" name="endDate" required />
-      </div>
-      <input
-        type="text"
-        class="form-control"
-        name="name"
-        placeholder="İsim"
-        required
-      />
-      <input
-        type="text"
-        class="form-control"
-        name="address"
-        placeholder="Adres"
-        required
-      />
-      <input
-        type="text"
-        class="form-control"
-        name="phone"
-        placeholder="Telefon"
-        required
-      />
-      <input
-        type="file"
-        class="form-control"
-        name="imageFile"
-        accept="image/*"
-        (change)="onImageSelected($event)"
-      />
-      <img
-        *ngIf="previewUrl"
-        [src]="previewUrl"
-        class="img-fluid rounded border"
-        style="max-height: 200px"
-      />
-      <input type="hidden" name="lat" />
-      <input type="hidden" name="lng" />
-      <button type="submit" class="btn btn-outline-success fw-bold">
-        Kaydet
+      <button
+        type="submit"
+        class="btn btn-outline-success fw-bold"
+        [disabled]="eventForm.invalid || isLoading"
+      >
+        <span
+          *ngIf="isLoading"
+          class="spinner-border spinner-border-sm me-2"
+          role="status"
+          aria-hidden="true"
+        ></span>
+        {{ isUpdateMode ? "Güncelle" : "Kaydet" }}
       </button>
     </form>
   </div>

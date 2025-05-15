@@ -11,11 +11,13 @@ namespace API.Controllers
     {
         private readonly EventsService _service;
         private readonly ImageService _imageService;
+        private readonly ILogger<EventsController> _logger;
 
-        public EventsController(EventsService service, ImageService imageService)
+        public EventsController(EventsService service, ImageService imageService, ILogger<EventsController> logger)
         {
             _service = service;
             _imageService = imageService;
+            _logger = logger;
         }
 
         #region Etkinlikleri Listele
@@ -142,28 +144,90 @@ namespace API.Controllers
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> Update(string id, [FromForm] EventUpdateDto dto)
         {
-            var existing = await _service.GetByIdAsync(id);
-            if (existing == null) return NotFound();
-
-            existing.EventTitle = dto.EventTitle;
-            existing.Decs = dto.Decs;
-            existing.StartDate = dto.StartDate;
-            existing.EndDate = dto.EndDate;
-            existing.Category = dto.Category;
-            existing.Geometry.Coordinates = dto.Coordinates;
-            existing.Properties.Name = dto.Name;
-            existing.Properties.Address = dto.Address;
-            existing.Properties.Phone = dto.Phone;
-
-            if (dto.ImageFile != null)
+            if (string.IsNullOrWhiteSpace(id))
             {
-                var imageUrl = await _imageService.UploadImageAsync(dto.ImageFile);
-                existing.ImageUrl = imageUrl;
+                return BadRequest("Geçerli bir etkinlik ID'si belirtilmelidir.");
             }
 
-            await _service.UpdateAsync(id, existing);
+            if (dto == null)
+            {
+                return BadRequest("Etkinlik bilgileri boş olamaz.");
+            }
 
-            return Ok("Etkinlik güncellendi");
+            try
+            {
+                var existing = await _service.GetByIdAsync(id);
+                if (existing == null)
+                {
+                    return NotFound($"ID: {id} olan etkinlik bulunamadı.");
+                }
+
+                if (dto.StartDate >= dto.EndDate)
+                {
+                    return BadRequest("Başlangıç tarihi, bitiş tarihinden önce olmalıdır.");
+                }
+
+                existing.EventTitle = !string.IsNullOrWhiteSpace(dto.EventTitle) ? dto.EventTitle : existing.EventTitle;
+                existing.Decs = !string.IsNullOrWhiteSpace(dto.Decs) ? dto.Decs : existing.Decs;
+                existing.StartDate = dto.StartDate;
+                existing.EndDate = dto.EndDate;
+                existing.Category = !string.IsNullOrWhiteSpace(dto.Category) ? dto.Category : existing.Category;
+
+                if (dto.Coordinates != null && dto.Coordinates.Length == 2)
+                {
+                    existing.Geometry.Coordinates = dto.Coordinates;
+                }
+
+                if (existing.Properties != null)
+                {
+                    existing.Properties.Name = !string.IsNullOrWhiteSpace(dto.Name) ? dto.Name : existing.Properties.Name;
+                    existing.Properties.Address = !string.IsNullOrWhiteSpace(dto.Address) ? dto.Address : existing.Properties.Address;
+                    existing.Properties.Phone = !string.IsNullOrWhiteSpace(dto.Phone) ? dto.Phone : existing.Properties.Phone;
+                }
+                else
+                {
+                    existing.Properties = new Properties
+                    {
+                        Name = dto.Name,
+                        Address = dto.Address,
+                        Phone = dto.Phone
+                    };
+                }
+
+                if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+                {
+                    if (dto.ImageFile.Length > 10 * 1024 * 1024)
+                    {
+                        return BadRequest("Resim dosyası 10MB'dan büyük olamaz.");
+                    }
+
+                    var allowedTypes = new[] { "image/jpeg", "image/png", "image/jpg" };
+                    if (!allowedTypes.Contains(dto.ImageFile.ContentType.ToLower()))
+                    {
+                        return BadRequest("Sadece JPEG, JPG ve PNG formatındaki resimler kabul edilmektedir.");
+                    }
+
+                    try
+                    {
+                        var imageUrl = await _imageService.UploadImageAsync(dto.ImageFile);
+                        existing.ImageUrl = imageUrl;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"Resim yüklenirken bir hata oluştu. ID: {id}");
+                        return StatusCode(500, "Resim yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.");
+                    }
+                }
+
+                await _service.UpdateAsync(id, existing);
+
+                return Ok(new { success = true, message = $"Etkinlik başarıyla güncellendi. (ID: {id})" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Etkinlik güncellenirken hata oluştu. ID: {id}");
+                return StatusCode(500, "Etkinlik güncellenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.");
+            }
         }
         #endregion
 
@@ -171,20 +235,37 @@ namespace API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
-            var existing = await _service.GetByIdAsync(id);
-            if (existing == null) return NotFound();
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                return BadRequest("Geçerli bir etkinlik ID'si belirtilmelidir.");
+            }
 
-            await _service.DeleteAsync(id);
-            return Ok("Etkinlik silindi");
+            try
+            {
+                var existing = await _service.GetByIdAsync(id);
+                if (existing == null)
+                {
+                    return NotFound($"ID: {id} olan etkinlik bulunamadı.");
+                }
+
+                await _service.DeleteAsync(id);
+
+                return Ok(new { success = true, message = $"Etkinlik başarıyla silindi. (ID: {id})" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Etkinlik silinirken hata oluştu. ID: {id}");
+                return StatusCode(500, "Etkinlik silinirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.");
+            }
         }
         #endregion
 
         #region Yakındaki etkinlikleri bul
         [HttpGet("nearby")]
         public async Task<IActionResult> GetNearby(
-            [FromQuery] double longitude,
-            [FromQuery] double latitude,
-            [FromQuery] double maxDistance = 5000)
+    [FromQuery] double longitude,
+    [FromQuery] double latitude,
+    [FromQuery] double maxDistance = 5000)
         {
             var items = await _service.GetNearbyAsync(longitude, latitude, maxDistance);
 
