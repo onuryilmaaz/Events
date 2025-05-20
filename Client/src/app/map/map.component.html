@@ -17,14 +17,16 @@
             {{ store.eventTitle }}
           </a>
           <br />
-          <div class="d-flex justify-content-center">
+          <div
+            class="d-flex justify-content-center align-items-center overflow-hidden rounded-4"
+            style="width: 300px; height: 150px"
+          >
             <img
-              class="img-fluid rounded-4 mt-2"
+              class="w-100 h-100 object-fit-cover"
               src="{{
                 store.imageUrl == null ? 'noImage.jpg' : store.imageUrl
               }}"
-              width="300px"
-              height="150px"
+              alt="Store Image"
             />
           </div>
           <p class="text-secondary m-0">

@@ -196,17 +196,6 @@ namespace API.Controllers
 
                 if (dto.ImageFile != null && dto.ImageFile.Length > 0)
                 {
-                    if (dto.ImageFile.Length > 10 * 1024 * 1024)
-                    {
-                        return BadRequest("Resim dosyası 10MB'dan büyük olamaz.");
-                    }
-
-                    var allowedTypes = new[] { "image/jpeg", "image/png", "image/jpg" };
-                    if (!allowedTypes.Contains(dto.ImageFile.ContentType.ToLower()))
-                    {
-                        return BadRequest("Sadece JPEG, JPG ve PNG formatındaki resimler kabul edilmektedir.");
-                    }
-
                     try
                     {
                         var imageUrl = await _imageService.UploadImageAsync(dto.ImageFile);
