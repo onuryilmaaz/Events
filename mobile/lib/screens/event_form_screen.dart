@@ -32,6 +32,9 @@ class _EventFormScreenState extends State<EventFormScreen> {
   XFile? _imageFile;
   String _imageUrl = '';
   bool _isLoading = false;
+  bool _isUploading =
+      false; // Resim yükleme durumunu kontrol etmek için yeni değişken
+  String _uploadStatus = ''; // Yükleme durumunu göstermek için metin
   final dateFormat = DateFormat('dd.MM.yyyy HH:mm');
   String baseUrl = 'http://10.0.2.2:5117/api/Events';
 
@@ -151,6 +154,8 @@ class _EventFormScreenState extends State<EventFormScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
+        _isUploading = true;
+        _uploadStatus = 'Etkinlik bilgileri hazırlanıyor...';
       });
 
       try {
@@ -170,6 +175,10 @@ class _EventFormScreenState extends State<EventFormScreen> {
         ]);
 
         if (_imageFile != null) {
+          setState(() {
+            _uploadStatus = 'Resim yükleniyor...';
+          });
+
           formData.files.add(
             MapEntry(
               "ImageFile",
@@ -181,14 +190,33 @@ class _EventFormScreenState extends State<EventFormScreen> {
           );
         }
 
+        setState(() {
+          _uploadStatus = 'Sunucuya veri gönderiliyor...';
+        });
+
         Response response;
 
         if (widget.event == null) {
-          response = await Dio().post(baseUrl, data: formData);
+          response = await Dio().post(
+            baseUrl,
+            data: formData,
+            onSendProgress: (int sent, int total) {
+              setState(() {
+                _uploadStatus =
+                    'Yükleniyor: ${((sent / total) * 100).toStringAsFixed(0)}%';
+              });
+            },
+          );
         } else {
           response = await Dio().put(
             '${baseUrl}/${widget.event!.id}',
             data: formData,
+            onSendProgress: (int sent, int total) {
+              setState(() {
+                _uploadStatus =
+                    'Yükleniyor: ${((sent / total) * 100).toStringAsFixed(0)}%';
+              });
+            },
           );
         }
 
@@ -204,6 +232,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
       } finally {
         setState(() {
           _isLoading = false;
+          _isUploading = false;
         });
       }
     }
@@ -217,8 +246,10 @@ class _EventFormScreenState extends State<EventFormScreen> {
           widget.event == null ? 'Etkinlik Ekle' : 'Etkinlik Düzenle',
         ),
       ),
-      body:
-          _isLoading
+      body: Stack(
+        children: [
+          // Ana form içeriği
+          _isLoading && !_isUploading
               ? const Center(child: CircularProgressIndicator())
               : SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
@@ -229,7 +260,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
                     children: [
                       TextFormField(
                         controller: _titleController,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Etkinlik Başlığı',
                           border: OutlineInputBorder(),
                         ),
@@ -243,7 +274,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _descController,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Açıklama',
                           border: OutlineInputBorder(),
                         ),
@@ -258,7 +289,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _categoryController,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Kategori',
                           border: OutlineInputBorder(),
                         ),
@@ -294,7 +325,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Text(
+                      const Text(
                         'İletişim Bilgileri',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
@@ -304,7 +335,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _nameController,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'İsim',
                           border: OutlineInputBorder(),
                         ),
@@ -318,7 +349,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _phoneController,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Telefon',
                           border: OutlineInputBorder(),
                         ),
@@ -333,7 +364,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _addressController,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Adres',
                           border: OutlineInputBorder(),
                         ),
@@ -345,7 +376,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      Text(
+                      const Text(
                         'Etkinlik Resmi',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
@@ -407,14 +438,15 @@ class _EventFormScreenState extends State<EventFormScreen> {
                         label: const Text("Resim Seç"),
                       ),
                       const SizedBox(height: 16),
-                      Text('Konum Seçin (Haritaya Tıklayın):'),
+                      const Text('Konum Seçin (Haritaya Tıklayın):'),
                       const SizedBox(height: 8),
                       SizedBox(
                         height: 300,
                         child: FlutterMap(
                           options: MapOptions(
-                            center: _selectedLocation,
-                            zoom: 13.0,
+                            initialCenter:
+                                _selectedLocation, // Güncellenmiş alan
+                            initialZoom: 13.0, // Güncellenmiş alan
                             onTap: (tapPosition, latLng) {
                               setState(() {
                                 _selectedLocation = latLng;
@@ -433,7 +465,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
                                   width: 80.0,
                                   height: 80.0,
                                   point: _selectedLocation,
-                                  child: Icon(
+                                  child: const Icon(
                                     Icons.location_on,
                                     color: Colors.red,
                                     size: 40.0,
@@ -467,6 +499,37 @@ class _EventFormScreenState extends State<EventFormScreen> {
                   ),
                 ),
               ),
+
+          // Yükleme göstergesi overlay'i
+          if (_isUploading)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              width: double.infinity,
+              height: double.infinity,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 20),
+                      Text(
+                        _uploadStatus,
+                        style: const TextStyle(fontSize: 16),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
