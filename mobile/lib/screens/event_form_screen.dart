@@ -444,9 +444,8 @@ class _EventFormScreenState extends State<EventFormScreen> {
                         height: 300,
                         child: FlutterMap(
                           options: MapOptions(
-                            initialCenter:
-                                _selectedLocation, // Güncellenmiş alan
-                            initialZoom: 13.0, // Güncellenmiş alan
+                            initialCenter: _selectedLocation,
+                            initialZoom: 13.0,
                             onTap: (tapPosition, latLng) {
                               setState(() {
                                 _selectedLocation = latLng;
