@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 import '../models/event_model.dart';
 import '../services/event_service.dart';
 import 'event_form_screen.dart';
@@ -20,6 +21,15 @@ class EventDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('Etkinlik Detayı'),
         actions: [
+          IconButton(
+            icon: Icon(Icons.directions_sharp),
+            onPressed: () {
+              Navigator.pop(
+                context,
+                LatLng(event.coordinates[1], event.coordinates[0]),
+              );
+            },
+          ),
           IconButton(
             icon: Icon(Icons.edit),
             onPressed: () async {
@@ -215,7 +225,7 @@ class EventDetailScreen extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: 16),
-                   Card(
+                  Card(
                     elevation: 2,
                     child: Padding(
                       padding: const EdgeInsets.all(12.0),

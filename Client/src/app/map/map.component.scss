@@ -28,3 +28,37 @@ button .spinner-border {
   width: 1rem;
   height: 1rem;
 }
+
+#map {
+  height: 100vh;
+  width: 75%; /* HTML'deki inline style'ı buraya taşıyabilirsiniz */
+}
+
+/* Rota detayları paneli için stil */
+.card.shadow-lg.position-absolute {
+  /* top, end, margin değerleri inline style'dan alınmıştır, burada da tanımlayabilirsiniz */
+  /* Örneğin: */
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000; /* Haritanın ve diğer elemanların üzerinde olmasını sağlar */
+  max-width: 22rem; /* Genişlik inline style'dan */
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Etkinlik listesi alanı */
+main.d-flex {
+  height: 100vh; /* Main elementin yüksekliğini ayarlar */
+}
+
+.bg-light.border-end {
+  width: 25%; /* HTML'deki inline style'ı buraya taşıyabilirsiniz */
+  height: 100vh; /* HTML'deki inline style'ı buraya taşıyabilirsiniz */
+  position: relative;
+}
+
+// Bootstrap Icons'ı eklediyseniz, ikonların rengini veya boyutunu ayarlayabilirsiniz
+.bi {
+  font-size: 1.2rem; /* İkon boyutunu ayarlayın */
+  vertical-align: middle; /* İkonların dikey hizalamasını ayarlar */
+}

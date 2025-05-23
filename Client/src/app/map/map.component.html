@@ -1,4 +1,4 @@
-<main class="d-flex">
+<!-- <main class="d-flex">
   <div
     class="bg-light border-end overflow-auto"
     style="width: 25%; height: 100vh; position: relative"
@@ -55,6 +55,323 @@
     </ul>
   </div>
   <div id="map" style="height: 100vh; width: 75%"></div>
+
+  <div
+    *ngIf="showEventFormPopup"
+    class="position-fixed bg-light bg-gradient shadow rounded-4 p-4"
+    style="
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 9999;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    "
+  >
+    <button
+      type="button"
+      class="btn-close float-end"
+      aria-label="Close"
+      (click)="closePopup()"
+    ></button>
+
+    <h5 class="text-center text-dark mb-4 mt-2">
+      {{ isUpdateMode ? "Etkinlik Güncelle" : "Etkinlik Oluştur" }}
+    </h5>
+
+    <form
+      [formGroup]="eventForm"
+      (ngSubmit)="onSubmit()"
+      class="d-flex flex-column gap-3"
+    >
+      <input
+        type="text"
+        class="form-control"
+        formControlName="eventTitle"
+        placeholder="Etkinlik Başlığı"
+        required
+      />
+      <div
+        *ngIf="
+          eventForm.get('eventTitle')?.invalid &&
+          eventForm.get('eventTitle')?.touched
+        "
+        class="text-danger small"
+      >
+        Etkinlik başlığı gerekli
+      </div>
+
+      <textarea
+        class="form-control"
+        formControlName="decs"
+        placeholder="Açıklama"
+        rows="3"
+        required
+      ></textarea>
+      <div
+        *ngIf="eventForm.get('decs')?.invalid && eventForm.get('decs')?.touched"
+        class="text-danger small"
+      >
+        Açıklama gerekli
+      </div>
+
+      <input
+        type="text"
+        class="form-control"
+        formControlName="category"
+        placeholder="Kategori"
+        required
+      />
+      <div
+        *ngIf="
+          eventForm.get('category')?.invalid &&
+          eventForm.get('category')?.touched
+        "
+        class="text-danger small"
+      >
+        Kategori gerekli
+      </div>
+
+      <div class="d-flex gap-2">
+        <div class="w-50">
+          <input
+            type="date"
+            class="form-control"
+            formControlName="startDate"
+            required
+          />
+          <div
+            *ngIf="
+              eventForm.get('startDate')?.invalid &&
+              eventForm.get('startDate')?.touched
+            "
+            class="text-danger small"
+          >
+            Başlangıç tarihi gerekli
+          </div>
+        </div>
+        <div class="w-50">
+          <input
+            type="date"
+            class="form-control"
+            formControlName="endDate"
+            required
+          />
+          <div
+            *ngIf="
+              eventForm.get('endDate')?.invalid &&
+              eventForm.get('endDate')?.touched
+            "
+            class="text-danger small"
+          >
+            Bitiş tarihi gerekli
+          </div>
+        </div>
+      </div>
+
+      <input
+        type="text"
+        class="form-control"
+        formControlName="name"
+        placeholder="İsim"
+        required
+      />
+      <div
+        *ngIf="eventForm.get('name')?.invalid && eventForm.get('name')?.touched"
+        class="text-danger small"
+      >
+        İsim gerekli
+      </div>
+
+      <input
+        type="text"
+        class="form-control"
+        formControlName="address"
+        placeholder="Adres"
+        required
+      />
+      <div
+        *ngIf="
+          eventForm.get('address')?.invalid && eventForm.get('address')?.touched
+        "
+        class="text-danger small"
+      >
+        Adres gerekli
+      </div>
+
+      <input
+        type="text"
+        class="form-control"
+        formControlName="phone"
+        placeholder="Telefon"
+        required
+      />
+      <div
+        *ngIf="
+          eventForm.get('phone')?.invalid && eventForm.get('phone')?.touched
+        "
+        class="text-danger small"
+      >
+        Telefon gerekli
+      </div>
+
+      <input
+        type="file"
+        class="form-control"
+        (change)="onImageSelected($event)"
+        accept="image/*"
+      />
+
+      <img
+        *ngIf="previewUrl"
+        [src]="previewUrl"
+        alt="Seçilen Resim"
+        class="img-fluid rounded border"
+        style="max-height: 200px; margin-top: 10px"
+      />
+
+      <input type="hidden" formControlName="lat" />
+      <input type="hidden" formControlName="lng" />
+
+      <button
+        type="submit"
+        class="btn btn-outline-success fw-bold"
+        [disabled]="eventForm.invalid || isLoading"
+      >
+        <span
+          *ngIf="isLoading"
+          class="spinner-border spinner-border-sm me-2"
+          role="status"
+          aria-hidden="true"
+        ></span>
+        {{ isUpdateMode ? "Güncelle" : "Kaydet" }}
+      </button>
+    </form>
+  </div>
+</main> -->
+
+<main class="d-flex">
+  <div
+    class="bg-light border-end overflow-auto"
+    style="width: 25%; height: 100vh; position: relative"
+  >
+    <div class="bg-success text-white text-center position-sticky top-0">
+      <h2 class="p-3 m-0">Etkinlik Listesi</h2>
+    </div>
+    <ul class="list-unstyled p-3">
+      <li *ngFor="let store of storeList; let i = index">
+        <div class="p-3 rounded-4 shadow-lg mb-3">
+          <a
+            href="#"
+            class="text-decoration-none text-success fw-bold fs-5"
+            (click)="flyToStore(store); $event.preventDefault()"
+          >
+            {{ store.eventTitle }}
+          </a>
+          <br />
+          <div
+            class="d-flex justify-content-center align-items-center overflow-hidden rounded-4"
+            style="width: 300px; height: 150px"
+          >
+            <img
+              class="w-100 h-100 object-fit-cover"
+              src="{{
+                store.imageUrl == null ? 'noImage.jpg' : store.imageUrl
+              }}"
+              alt="Store Image"
+            />
+          </div>
+          <p class="text-secondary m-0">
+            {{ store.decs }}
+          </p>
+          <p class="text-secondary small m-0">
+            {{ formatExpiryDate(store.startDate) }} -
+            {{ formatExpiryDate(store.endDate) }}
+          </p>
+          <div class="d-flex justify-content-center mt-2">
+            <button
+              class="btn btn-outline-danger mx-2"
+              (click)="deleteEvent(store.id)"
+            >
+              Sil
+            </button>
+            <button
+              class="btn btn-outline-warning mx-2"
+              (click)="openUpdateForm(store)"
+            >
+              Güncelle
+            </button>
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div id="map" style="height: 100vh; width: 75%"></div>
+
+  <div
+    *ngIf="routeDetails"
+    class="card shadow-lg position-absolute top-0 end-0 m-3"
+    style="width: 22rem; z-index: 1000; max-height: 90vh; overflow-y: auto"
+  >
+    <div
+      class="card-header bg-primary text-white d-flex justify-content-between align-items-center"
+    >
+      <h5 class="mb-0">Rota Detayları</h5>
+      <button
+        type="button"
+        class="btn-close btn-close-white"
+        aria-label="Close"
+        (click)="routeDetails = null; clearPreviousRouteAndMarker()"
+      ></button>
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <h6 class="card-subtitle mb-2 text-muted">Özet</h6>
+        <p class="card-text">
+          <i class="bi bi-geo-alt me-2"></i> Toplam Mesafe:
+          <strong>{{ routeDetails.totalDistance }} km</strong>
+        </p>
+        <p class="card-text">
+          <i class="bi bi-clock me-2"></i> Tahmini Süre:
+          <strong>{{ routeDetails.totalTime }} dakika</strong>
+        </p>
+      </div>
+
+      <hr />
+
+      <div>
+        <h6 class="card-subtitle mb-2 text-muted">Adımlar</h6>
+        <ul class="list-group list-group-flush">
+          <li
+            *ngFor="let instruction of routeDetails.instructions; let i = index"
+            class="list-group-item d-flex align-items-center"
+          >
+            <span class="badge bg-secondary me-2">{{ i + 1 }}</span>
+            <i
+              class="me-2"
+              [class]="getInstructionIconClass(instruction, i, routeDetails)"
+            ></i>
+            <div>
+              {{ instruction.text }}
+              <small class="text-muted d-block"
+                >({{ instruction.distance }} km /
+                {{ instruction.time }} dk)</small
+              >
+            </div>
+            <span
+              *ngIf="instruction.street"
+              class="ms-auto text-muted small fst-italic"
+            >
+              ({{ instruction.street }})
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
 
   <div
     *ngIf="showEventFormPopup"

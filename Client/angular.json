@@ -33,6 +33,7 @@
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
               "src/styles.scss",
               "node_modules/leaflet/dist/leaflet.css",
+              "node_modules/leaflet-routing-machine/dist/leaflet-routing-machine.css",
               "node_modules/ngx-toastr/toastr.css"
             ],
             "scripts": [
@@ -91,7 +92,10 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.scss"],
+            "styles": [
+              "src/styles.scss",
+              "node_modules/leaflet-routing-machine/dist/leaflet-routing-machine.css"
+            ],
             "scripts": []
           }
         }
