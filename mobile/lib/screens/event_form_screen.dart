@@ -935,3 +935,222 @@ class _EventFormScreenState extends State<EventFormScreen> {
     );
   }
 }
+
+// // ignore_for_file: unused_field
+
+// import 'package:flutter/material.dart';
+// import 'package:flutter_map/flutter_map.dart';
+// import 'package:image_picker/image_picker.dart';
+// import 'package:latlong2/latlong.dart';
+// import 'package:mobile/widgets/event_app_bar.dart';
+// import 'package:mobile/widgets/event_contact_form.dart';
+// import 'package:mobile/widgets/event_date_picker.dart';
+// import 'package:mobile/widgets/event_image_picker.dart';
+// import 'package:mobile/widgets/event_info_form.dart';
+// import 'package:mobile/widgets/event_location_picker.dart';
+// import 'package:mobile/widgets/save_button.dart';
+// import 'package:mobile/widgets/upload_overlay.dart';
+// import '../models/event_model.dart';
+
+// class EventFormScreen extends StatefulWidget {
+//   final Event? event;
+//   const EventFormScreen({super.key, this.event});
+//   @override
+//   State<EventFormScreen> createState() => _EventFormScreenState();
+// }
+
+// class _EventFormScreenState extends State<EventFormScreen> {
+//   final MapController _mapController = MapController();
+//   final _formKey = GlobalKey<FormState>();
+//   late TextEditingController _titleController;
+//   late TextEditingController _descController;
+//   late TextEditingController _categoryController;
+//   late TextEditingController _nameController;
+//   late TextEditingController _addressController;
+//   late TextEditingController _phoneController;
+//   late DateTime _startDate;
+//   late DateTime _endDate;
+//   late LatLng _selectedLocation;
+//   XFile? _imageFile;
+//   String _imageUrl = '';
+//   bool _isLoading = false;
+//   bool _isUploading = false;
+//   String _uploadStatus = '';
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     if (widget.event != null) {
+//       _titleController = TextEditingController(text: widget.event!.eventTitle);
+//       _descController = TextEditingController(text: widget.event!.decs);
+//       _categoryController = TextEditingController(text: widget.event!.category);
+//       _nameController = TextEditingController(text: widget.event!.name);
+//       _addressController = TextEditingController(text: widget.event!.address);
+//       _phoneController = TextEditingController(text: widget.event!.phone);
+//       _startDate = widget.event!.startDate;
+//       _endDate = widget.event!.endDate;
+//       _selectedLocation = LatLng(
+//         widget.event!.coordinates[1],
+//         widget.event!.coordinates[0],
+//       );
+//       _imageUrl = widget.event!.imageUrl;
+//     } else {
+//       _titleController = TextEditingController();
+//       _descController = TextEditingController();
+//       _categoryController = TextEditingController();
+//       _nameController = TextEditingController();
+//       _addressController = TextEditingController();
+//       _phoneController = TextEditingController();
+//       _startDate = DateTime.now();
+//       _endDate = DateTime.now().add(const Duration(hours: 1));
+//       _selectedLocation = const LatLng(40.76, 29.93);
+//     }
+//   }
+
+//   @override
+//   void dispose() {
+//     _titleController.dispose();
+//     _descController.dispose();
+//     _categoryController.dispose();
+//     _nameController.dispose();
+//     _addressController.dispose();
+//     _phoneController.dispose();
+//     super.dispose();
+//   }
+
+//   Future<void> _selectStartDate(BuildContext context) async {
+//     final pickedDate = await showDatePicker(
+//       context: context,
+//       initialDate: _startDate,
+//       firstDate: DateTime.now().subtract(const Duration(days: 365)),
+//       lastDate: DateTime.now().add(const Duration(days: 365)),
+//     );
+//     if (pickedDate != null) {
+//       final pickedTime = await showTimePicker(
+//         context: context,
+//         initialTime: TimeOfDay.fromDateTime(_startDate),
+//       );
+//       if (pickedTime != null) {
+//         setState(() {
+//           _startDate = DateTime(
+//             pickedDate.year,
+//             pickedDate.month,
+//             pickedDate.day,
+//             pickedTime.hour,
+//             pickedTime.minute,
+//           );
+//           if (_endDate.isBefore(_startDate)) {
+//             _endDate = _startDate.add(const Duration(hours: 1));
+//           }
+//         });
+//       }
+//     }
+//   }
+
+//   Future<void> _selectEndDate(BuildContext context) async {
+//     final pickedDate = await showDatePicker(
+//       context: context,
+//       initialDate:
+//           _endDate.isAfter(_startDate)
+//               ? _endDate
+//               : _startDate.add(const Duration(hours: 1)),
+//       firstDate: _startDate,
+//       lastDate: DateTime.now().add(const Duration(days: 365)),
+//     );
+//     if (pickedDate != null) {
+//       final pickedTime = await showTimePicker(
+//         context: context,
+//         initialTime: TimeOfDay.fromDateTime(_endDate),
+//       );
+//       if (pickedTime != null) {
+//         setState(() {
+//           _endDate = DateTime(
+//             pickedDate.year,
+//             pickedDate.month,
+//             pickedDate.day,
+//             pickedTime.hour,
+//             pickedTime.minute,
+//           );
+//         });
+//       }
+//     }
+//   }
+
+//   Future<void> _pickImage() async {
+//     final picker = ImagePicker();
+//     final XFile? pickedFile = await picker.pickImage(
+//       source: ImageSource.gallery,
+//     );
+//     if (pickedFile != null) {
+//       setState(() {
+//         _imageFile = pickedFile;
+//         _imageUrl = '';
+//       });
+//     }
+//   }
+
+//   Future<void> _saveEvent() async {
+//     if (_formKey.currentState!.validate()) {
+//       setState(() {
+//         _isLoading = true;
+//         _isUploading = true;
+//         _uploadStatus = 'Etkinlik bilgileri hazırlanıyor...';
+//       });
+//       // Buradan sonra veri gönderimi yapılacak (Dio ile)
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: buildEventAppBar(isEditing: widget.event != null),
+//       body: Stack(
+//         children: [
+//           SingleChildScrollView(
+//             padding: const EdgeInsets.all(20),
+//             child: Form(
+//               key: _formKey,
+//               child: Column(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: [
+//                   buildEventInfoForm(
+//                     titleController: _titleController,
+//                     descController: _descController,
+//                     categoryController: _categoryController,
+//                   ),
+//                   EventDatePicker(
+//                     startDate: _startDate,
+//                     endDate: _endDate,
+//                     onSelectStartDate: () => _selectStartDate(context),
+//                     onSelectEndDate: () => _selectEndDate(context),
+//                   ),
+//                   buildContactForm(
+//                     nameController: _nameController,
+//                     phoneController: _phoneController,
+//                     addressController: _addressController,
+//                   ),
+//                   EventImagePicker(
+//                     imageFile: _imageFile,
+//                     imageUrl: _imageUrl,
+//                     onPickImage: _pickImage,
+//                   ),
+//                   EventLocationPicker(
+//                     selectedLocation: _selectedLocation,
+//                     onLocationSelected:
+//                         (latLng) => setState(() => _selectedLocation = latLng),
+//                     mapController: _mapController,
+//                   ),
+//                   SaveButton(
+//                     isEditing: widget.event != null,
+//                     onSave: _saveEvent,
+//                   ),
+//                 ],
+//               ),
+//             ),
+//           ),
+//           if (_isUploading) UploadOverlay(uploadStatus: _uploadStatus),
+//         ],
+//       ),
+//     );
+//   }
+// }
