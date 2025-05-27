@@ -10,7 +10,7 @@ class UploadOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.black.withOpacity(0.7),
+      color: Colors.black,
       width: double.infinity,
       height: double.infinity,
       child: Center(
@@ -21,7 +21,7 @@ class UploadOverlay extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black,
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),

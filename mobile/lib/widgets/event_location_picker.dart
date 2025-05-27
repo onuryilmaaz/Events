@@ -190,7 +190,7 @@ class _EventLocationPickerState extends State<EventLocationPicker> {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black,
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -245,7 +245,7 @@ class _EventLocationPickerState extends State<EventLocationPicker> {
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  color: Colors.black,
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 ),

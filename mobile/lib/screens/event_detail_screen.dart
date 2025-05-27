@@ -62,7 +62,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   const SizedBox(height: 24),
                   _buildEventDates(dateFormat, colorScheme),
                   const SizedBox(height: 16),
-                  _buildDescription(theme),
+                  _buildDescription(theme, colorScheme),
                   const SizedBox(height: 16),
                   _buildContactInfo(colorScheme),
                   const SizedBox(height: 16),
@@ -110,7 +110,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black,
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -134,7 +134,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           },
           errorBuilder: (context, error, stackTrace) {
             return Container(
-              color: Theme.of(context).colorScheme.surfaceVariant,
+              color: Colors.red[500],
               child: const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -230,7 +230,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
-  Widget _buildDescription(ThemeData theme) {
+  Widget _buildDescription(ThemeData theme, ColorScheme colorScheme) {
+    colorScheme = colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -245,8 +246,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: colorScheme.outline, width: 1),
           ),
           child: Text(widget.event.decs, style: theme.textTheme.bodyMedium),
         ),
@@ -346,7 +348,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: colorScheme.outline.withOpacity(0.2), width: 1),
+        side: BorderSide(color: colorScheme.outline, width: 1),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),

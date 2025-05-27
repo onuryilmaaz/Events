@@ -1,4 +1,4 @@
-// ignore_for_file: unused_field
+// ignore_for_file: unused_field, unnecessary_brace_in_string_interps
 
 import 'dart:async';
 import 'dart:convert';
@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:mobile/models/route_option.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 import '../models/event_model.dart';
@@ -225,7 +226,20 @@ class _MapScreenState extends State<MapScreen>
           _routePoints = newRoutePoints;
         });
 
-        _showRouteInfo(duration.toInt(), distance.toInt());
+        _showRouteInfo([
+          RouteOption(
+            title: 'Yaya',
+            duration: const Duration(minutes: 20),
+            distance: 1.5,
+            color: Colors.blue,
+          ),
+          RouteOption(
+            title: 'Bisiklet',
+            duration: const Duration(minutes: 10),
+            distance: 2.0,
+            color: Colors.green,
+          ),
+        ]);
         _startRouteAnimation();
         _fitBoundsToRoute();
       } else {
@@ -270,22 +284,128 @@ class _MapScreenState extends State<MapScreen>
     );
   }
 
-  void _showRouteInfo(int durationSeconds, int distanceMeters) {
-    final duration = Duration(seconds: durationSeconds);
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes % 60;
-    final distance = (distanceMeters / 1000).toStringAsFixed(1);
+  void _showRouteInfo(List<RouteOption> routes) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: Colors.white,
+      elevation: 8,
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Başlık
+              Text(
+                'Rota Seçenekleri',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+              const SizedBox(height: 16),
 
-    String timeText = '';
-    if (hours > 0) {
-      timeText = '${hours}s ${minutes}dk';
-    } else {
-      timeText = '${minutes}dk';
-    }
+              // Rotalar
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: routes.length,
+                itemBuilder: (context, index) {
+                  final route = routes[index];
+                  final hours = route.duration.inHours;
+                  final minutes = route.duration.inMinutes % 60;
+                  final timeText =
+                      hours > 0
+                          ? '${hours} saat ${minutes} dakika'
+                          : '${minutes} dakika';
+                  final distanceText =
+                      '${route.distance.toStringAsFixed(1)} km';
 
-    _showSnackBar(
-      'Mesafe: ${distance}km • Süre: $timeText',
-      duration: Duration(seconds: 4),
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Row(
+                      children: [
+                        // Renk Noktası
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: route.color,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Bilgi
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                route.title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.directions_car,
+                                    size: 16,
+                                    color: route.color,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    timeText,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Icon(
+                                    Icons.straighten,
+                                    size: 16,
+                                    color: route.color,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    distanceText,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+
+              // Kapat Butonu
+              TextButton.icon(
+                onPressed: Navigator.of(context).pop,
+                icon: const Icon(Icons.close, color: Colors.grey),
+                label: const Text(
+                  'Kapat',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -492,7 +612,7 @@ class _MapScreenState extends State<MapScreen>
     }
 
     return Container(
-      color: Colors.black.withOpacity(0.3),
+      color: Colors.black,
       child: const Center(
         child: Card(
           child: Padding(
@@ -644,10 +764,24 @@ class _MapScreenState extends State<MapScreen>
           _showSnackBar('Yeni etkinlik eklendi');
         }
       },
-      
-      icon: const Icon(Icons.add_rounded),
-      label: const Text('Etkinlik Ekle', selectionColor: Colors.white),
-      backgroundColor: Colors.teal,
+      icon: const Icon(Icons.edit_calendar_rounded),
+      label: const Text(
+        'Etkinlik Ekle',
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+          color: Colors.white,
+        ),
+      ),
+      backgroundColor: const Color(0xFF10B981),
+      foregroundColor: Colors.white,
+      elevation: 6,
+      hoverElevation: 8,
+      highlightElevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+      isExtended: true,
     );
   }
 }
