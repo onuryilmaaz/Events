@@ -242,6 +242,7 @@ class _MapScreenState extends State<MapScreen>
         ]);
         _startRouteAnimation();
         _fitBoundsToRoute();
+        print('Rota Koordinatları: $newRoutePoints');
       } else {
         _showSnackBar(
           'Rota hesaplanamadı: ${response.statusCode}',
