@@ -13,6 +13,7 @@ import '../models/event_model.dart';
 import '../services/event_service.dart';
 import 'event_form_screen.dart';
 import 'event_detail_screen.dart';
+import 'package:intl/intl.dart';
 
 enum MapState { loading, loaded, error }
 
@@ -28,7 +29,6 @@ class RouteInfo {
   final Color color;
   final String title;
   final IconData icon;
-
   RouteInfo({
     required this.points,
     required this.duration,
@@ -70,7 +70,6 @@ class _MapScreenState extends State<MapScreen>
   late AnimationController _bottomSheetController;
   Timer? _routeAnimationTimer;
   int _currentRouteIndex = 0;
-
   static const double _defaultZoom = 10.0;
   static const double _detailZoom = 15.0;
   static const LatLng _defaultCenter = LatLng(40.76, 29.93);
@@ -78,7 +77,6 @@ class _MapScreenState extends State<MapScreen>
 
   @override
   bool get wantKeepAlive => true;
-
   @override
   void initState() {
     super.initState();
@@ -100,12 +98,10 @@ class _MapScreenState extends State<MapScreen>
       duration: const Duration(seconds: 2),
       vsync: this,
     )..repeat();
-
     _routeController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-
     _bottomSheetController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -121,9 +117,7 @@ class _MapScreenState extends State<MapScreen>
       setState(() {
         _locationState = LocationState.loading;
       });
-
       final status = await Permission.location.request();
-
       if (!status.isGranted) {
         setState(() {
           _locationState = LocationState.denied;
@@ -136,15 +130,11 @@ class _MapScreenState extends State<MapScreen>
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: const Duration(seconds: 10),
       );
-
       final userLocation = LatLng(position.latitude, position.longitude);
-
       setState(() {
         _currentUserLocation = userLocation;
         _locationState = LocationState.loaded;
-      });
-
-      // İlk kez açıldığında kullanıcı konumuna git
+      }); // İlk kez açıldığında kullanıcı konumuna git
       if (_events.isEmpty) {
         _animateToLocation(userLocation, _detailZoom);
       }
@@ -162,9 +152,7 @@ class _MapScreenState extends State<MapScreen>
         _mapState = MapState.loading;
         _errorMessage = '';
       });
-
       final events = await _eventService.getEvents();
-
       setState(() {
         _events = events;
         _markers = _buildEventMarkers(events);
@@ -180,7 +168,6 @@ class _MapScreenState extends State<MapScreen>
 
   String _formatRouteDuration(Duration d) {
     if (d.inSeconds < 0) return "N/A";
-
     if (d.inHours > 0) {
       final hours = d.inHours;
       final minutes = d.inMinutes % 60;
@@ -188,8 +175,9 @@ class _MapScreenState extends State<MapScreen>
       return "$hours saat $minutes dakika";
     } else if (d.inMinutes > 0) {
       final minutes = d.inMinutes;
-      final seconds = d.inSeconds % 60;
-      // Sadece çok kısa rotalarda veya saniye sıfır değilse saniyeleri göster
+      final seconds =
+          d.inSeconds %
+          60; // Sadece çok kısa rotalarda veya saniye sıfır değilse saniyeleri göster
       if (seconds == 0 || minutes >= 10) {
         // 10 dakikadan uzunsa saniyeyi gösterme
         return "$minutes dakika";
@@ -247,7 +235,6 @@ class _MapScreenState extends State<MapScreen>
     setState(() {
       _selectedEvent = event;
     });
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -260,7 +247,22 @@ class _MapScreenState extends State<MapScreen>
     });
   }
 
+  Widget _buildDateRow({
+    required IconData icon,
+    required String label,
+    required String date,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.grey[600]),
+        const SizedBox(width: 8),
+        Text('$label: $date'),
+      ],
+    );
+  }
+
   Widget _buildEventBottomSheet(Event event) {
+    final dateFormat = DateFormat('dd.MM.yyyy HH:mm');
     return DraggableScrollableSheet(
       initialChildSize: 0.4,
       minChildSize: 0.3,
@@ -291,7 +293,6 @@ class _MapScreenState extends State<MapScreen>
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
@@ -299,6 +300,192 @@ class _MapScreenState extends State<MapScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              spreadRadius: 2,
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Etkinlik fotoğrafı
+                            if (event.imageUrl.isNotEmpty)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Fotoğraf:',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF333333),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: Image.network(
+                                      event.imageUrl,
+                                      width: double.infinity,
+                                      height: 200,
+                                      fit: BoxFit.cover,
+                                      loadingBuilder: (
+                                        context,
+                                        child,
+                                        loadingProgress,
+                                      ) {
+                                        if (loadingProgress == null)
+                                          return child;
+                                        return const Center(
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      },
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              const Center(
+                                                child: Text(
+                                                  "Görsel yüklenemedi",
+                                                ),
+                                              ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            const SizedBox(height: 14),
+                            // Başlık
+                            Text(
+                              event.eventTitle,
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF333333),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+
+                            // Tarih ve saat
+                            _buildDateRow(
+                              icon: Icons.play_arrow_rounded,
+                              label: 'Başlangıç',
+                              date: dateFormat.format(event.startDate),
+                            ),
+                            const SizedBox(height: 8),
+                            _buildDateRow(
+                              icon: Icons.stop_rounded,
+                              label: 'Bitiş',
+                              date: dateFormat.format(event.endDate),
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Açıklama
+                            Text(
+                              event.decs,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF555555),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Konum
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.location_on_rounded,
+                                  size: 22,
+                                  color: Colors.deepPurple,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    event.address,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Color(0xFF333333),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+
+                            // Koordinatlar
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.map,
+                                  size: 22,
+                                  color: Colors.deepPurple,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Lat: ${event.coordinates[1].toStringAsFixed(6)}, Lng: ${event.coordinates[0].toStringAsFixed(6)}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Color(0xFF333333),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+
+                            // Etkinlik türü
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.category,
+                                  size: 22,
+                                  color: Colors.deepPurple,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    event.category,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Color(0xFF333333),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+
+                            // Etkinlik sahibi
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.person,
+                                  size: 22,
+                                  color: Colors.deepPurple,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    event.name,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Color(0xFF333333),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
                       // Aksiyon butonları
                       Row(
                         children: [
@@ -356,7 +543,6 @@ class _MapScreenState extends State<MapScreen>
       _selectedRoute = null;
       _currentRouteIndex = 0;
     });
-
     _showSnackBar('Rotalar hesaplanıyor...', duration: Duration(seconds: 2));
 
     try {
@@ -366,11 +552,9 @@ class _MapScreenState extends State<MapScreen>
         _calculateRoute(destination, RouteType.walking),
         _calculateRoute(destination, RouteType.cycling),
       ];
-
       final results = await Future.wait(futures);
       final routes =
           results.where((route) => route != null).cast<RouteInfo>().toList();
-
       if (routes.isNotEmpty) {
         setState(() {
           _alternativeRoutes = routes;
@@ -378,7 +562,6 @@ class _MapScreenState extends State<MapScreen>
           _routePoints = _selectedRoute!.points;
           _currentRouteIndex = 0;
         });
-
         _showRouteSelectionBottomSheet();
         _startRouteAnimation();
         _fitBoundsToRoute();
@@ -434,7 +617,6 @@ class _MapScreenState extends State<MapScreen>
                       final timeText = _formatRouteDuration(route.duration);
                       final distanceText =
                           '${route.distance.toStringAsFixed(1)} km';
-
                       return GestureDetector(
                         onTap: () {
                           setState(() {
@@ -600,46 +782,50 @@ class _MapScreenState extends State<MapScreen>
       String title;
       IconData icon;
 
+      // OSRM için profil stringini belirle
+      String osrmProfileUrlSegment;
+
       switch (routeType) {
         case RouteType.driving:
           profile = 'driving';
+          osrmProfileUrlSegment = 'routed-car'; // Yeni eklenen kısım
           color = Colors.blue;
           title = 'Araba';
           icon = Icons.directions_car;
           break;
         case RouteType.walking:
           profile = 'foot';
+          osrmProfileUrlSegment = 'routed-foot'; // Yeni eklenen kısım
           color = Colors.green;
           title = 'Yürüyüş';
           icon = Icons.directions_walk;
           break;
         case RouteType.cycling:
           profile = 'bike';
+          osrmProfileUrlSegment = 'routed-bike'; // Yeni eklenen kısım
           color = Colors.orange;
           title = 'Bisiklet';
           icon = Icons.directions_bike;
           break;
       }
 
+      // **BURADAKİ URL DEĞİŞTİRİLDİ**
       final url =
-          'http://router.project-osrm.org/route/v1/$profile/'
+          'https://routing.openstreetmap.de/$osrmProfileUrlSegment/route/v1/driving/'
           '${_currentUserLocation!.longitude},${_currentUserLocation!.latitude};'
           '${destination.longitude},${destination.latitude}?overview=full&geometries=geojson';
 
       final response = await http
           .get(Uri.parse(url), headers: {'Accept': 'application/json'})
           .timeout(const Duration(seconds: 10));
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final coordinates =
             data['routes'][0]['geometry']['coordinates'] as List;
         final duration = data['routes'][0]['duration'] as num;
         final distance = data['routes'][0]['distance'] as num;
-
         final routePoints =
             coordinates.map((coord) => LatLng(coord[1], coord[0])).toList();
-
         return RouteInfo(
           points: routePoints,
           duration: Duration(seconds: duration.toInt()),
@@ -659,7 +845,6 @@ class _MapScreenState extends State<MapScreen>
   void _startRouteAnimation() {
     _routeAnimationTimer?.cancel();
     _currentRouteIndex = 0;
-
     _routeAnimationTimer = Timer.periodic(const Duration(milliseconds: 100), (
       timer,
     ) {
@@ -675,13 +860,11 @@ class _MapScreenState extends State<MapScreen>
 
   void _fitBoundsToRoute() {
     if (_routePoints.isEmpty || _currentUserLocation == null) return;
-
     final bounds = LatLngBounds.fromPoints([
       _currentUserLocation!,
       _selectedEventLocation!,
       ..._routePoints,
     ]);
-
     _mapController.fitCamera(
       CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)),
     );
@@ -692,7 +875,6 @@ class _MapScreenState extends State<MapScreen>
       context,
       MaterialPageRoute(builder: (context) => EventDetailScreen(event: event)),
     );
-
     if (!mounted) return;
 
     if (result == true) {
@@ -774,7 +956,6 @@ class _MapScreenState extends State<MapScreen>
     super.build(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Etkinlik Haritası'),
@@ -814,7 +995,6 @@ class _MapScreenState extends State<MapScreen>
       ..._markers,
       if (_currentUserLocation != null) _buildUserLocationMarker(colorScheme),
     ];
-
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
