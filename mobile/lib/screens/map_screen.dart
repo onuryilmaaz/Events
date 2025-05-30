@@ -55,6 +55,10 @@ class _MapScreenState extends State<MapScreen>
 
   MapState _mapState = MapState.loading;
   LocationState _locationState = LocationState.loading;
+  bool _showRouteCompletionCard = false;
+  String _completedRouteDistance = '';
+  String _completedRouteDuration = '';
+  String _completedRouteType = '';
 
   List<Event> _events = [];
   List<Marker> _markers = [];
@@ -528,6 +532,7 @@ class _MapScreenState extends State<MapScreen>
                               ),
                             ),
                           ),
+                          const SizedBox(width: 12),
                         ],
                       ),
                     ],
@@ -569,12 +574,12 @@ class _MapScreenState extends State<MapScreen>
         setState(() {
           _alternativeRoutes = routes;
           _selectedRoute = routes.first;
-          _routePoints = _selectedRoute!.points;
+          _routePoints = [];
           _currentRouteIndex = 0;
         });
         _showRouteSelectionBottomSheet();
-        _startRouteAnimation();
-        _fitBoundsToRoute();
+        //_startRouteAnimation();
+        //_fitBoundsToRoute();
       } else {
         _showSnackBar('Rota hesaplanamadı', isError: true);
       }
@@ -635,9 +640,11 @@ class _MapScreenState extends State<MapScreen>
                             _currentRouteIndex = 0;
                           });
                           setModalState(() {});
+                          Navigator.pop(context);
                           _startRouteAnimation();
                           _fitBoundsToRoute();
-                          Navigator.pop(context);
+
+                          _showSnackBar('${route.title} rotası seçildi.');
                         },
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 12),
@@ -755,11 +762,28 @@ class _MapScreenState extends State<MapScreen>
                         child: ElevatedButton(
                           onPressed: () {
                             Navigator.of(context).pop();
-                            if (_selectedRoute != null) {
-                              _showSnackBar(
-                                '${_selectedRoute!.title} rotası seçildi',
-                              );
-                            }
+                            final routeToStart =
+                                _selectedRoute ??
+                                _alternativeRoutes.firstWhere(
+                                  (route) =>
+                                      route.type ==
+                                      RouteType.driving, // Araç rotasını bul
+                                  orElse:
+                                      () =>
+                                          _alternativeRoutes
+                                              .first, // Bulamazsa ilk rotayı kullan
+                                );
+                            setState(() {
+                              _selectedRoute = routeToStart;
+                              _routePoints = _selectedRoute!.points;
+                              _currentRouteIndex = 0;
+                            });
+                            _startRouteAnimation(); // Rotayı çizmeye başla
+                            _fitBoundsToRoute(); // Harita sınırlarını rotaya göre ayarla
+
+                            _showSnackBar(
+                              '${_selectedRoute!.title} rotası başlatıldı',
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
@@ -864,6 +888,31 @@ class _MapScreenState extends State<MapScreen>
         });
       } else {
         timer.cancel();
+        if (_selectedRoute != null && _selectedEventLocation != null) {
+          final distance = _selectedRoute!.distance.toStringAsFixed(1);
+          final duration = _formatRouteDuration(_selectedRoute!.duration);
+          String activityType;
+
+          switch (_selectedRoute!.type) {
+            case RouteType.driving:
+              activityType = 'Araç kullanarak';
+              break;
+            case RouteType.walking:
+              activityType = 'Yürüyerek';
+              break;
+            case RouteType.cycling:
+              activityType = 'Bisiklet sürerek';
+              break;
+          }
+          setState(() {
+            _completedRouteDistance = distance;
+            _completedRouteDuration = duration;
+            _completedRouteType = activityType;
+            _showRouteCompletionCard = true;
+          });
+
+          //_animateToLocation(_selectedEventLocation!, _detailZoom);
+        }
       }
     });
   }
@@ -936,6 +985,7 @@ class _MapScreenState extends State<MapScreen>
       _currentRouteIndex = 0;
       _selectedRoute = null;
       _alternativeRoutes = [];
+      _showRouteCompletionCard = false;
     });
     _routeAnimationTimer?.cancel();
   }
@@ -981,12 +1031,6 @@ class _MapScreenState extends State<MapScreen>
         title: const Text('Etkinlik Haritası'),
         elevation: 0,
         actions: [
-          if (_routePoints.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.clear_rounded),
-              onPressed: _clearRoute,
-              tooltip: 'Rotayı Temizle',
-            ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: _refreshMap,
@@ -1000,6 +1044,7 @@ class _MapScreenState extends State<MapScreen>
           _buildLoadingOverlay(),
           _buildControlButtons(colorScheme),
           _buildLocationInfo(),
+          _buildRouteInfoPanel(colorScheme),
         ],
       ),
       floatingActionButton: _buildFloatingActionButton(colorScheme),
@@ -1115,6 +1160,88 @@ class _MapScreenState extends State<MapScreen>
                 Text('Harita yükleniyor...'),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Rota bilgisi panelini oluşturur (rota aktifken görünür)
+  Widget _buildRouteInfoPanel(ColorScheme colorScheme) {
+    if (_selectedRoute == null || _routePoints.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final timeText = _formatRouteDuration(_selectedRoute!.duration);
+    final distanceText = '${_selectedRoute!.distance.toStringAsFixed(1)} km';
+    final routeTitle = _selectedRoute!.title;
+    final routeIcon = _selectedRoute!.icon;
+    final routeColor = _selectedRoute!.color;
+
+    return Positioned(
+      top: 1,
+      left: 1,
+      right: 1,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        margin: const EdgeInsets.only(top: 8, left: 8, right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(
+            bottom: Radius.circular(16),
+            top: Radius.circular(16),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(51),
+              blurRadius: 8,
+              spreadRadius: 1,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          // Kenar boşluklarından korunmak için
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(routeIcon, color: routeColor, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(height: 10),
+                    Text(
+                      routeTitle,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$timeText (${distanceText})',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurface.withAlpha(180),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.clear_rounded,
+                  color: colorScheme.onSurface.withAlpha(180),
+                ),
+                onPressed: _clearRoute,
+                tooltip: 'Rotayı Temizle',
+              ),
+            ],
           ),
         ),
       ),
@@ -1269,7 +1396,7 @@ class _MapScreenState extends State<MapScreen>
           color: Colors.white,
         ),
       ),
-      backgroundColor: const Color(0xFF10B981),
+      backgroundColor: Colors.teal,
       foregroundColor: Colors.white,
       elevation: 6,
       hoverElevation: 8,

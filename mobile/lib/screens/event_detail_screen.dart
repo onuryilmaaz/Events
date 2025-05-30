@@ -231,7 +231,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   }
 
   Widget _buildDescription(ThemeData theme, ColorScheme colorScheme) {
-    colorScheme = colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
