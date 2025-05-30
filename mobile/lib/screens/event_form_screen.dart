@@ -8,6 +8,9 @@ import 'package:intl/intl.dart';
 import 'dart:io';
 import '../models/event_model.dart';
 import '../services/event_service.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_debouncer/flutter_debouncer.dart';
+import 'dart:convert';
 
 class EventFormScreen extends StatefulWidget {
   final Event? event;
@@ -27,6 +30,12 @@ class _EventFormScreenState extends State<EventFormScreen> {
   late TextEditingController _nameController;
   late TextEditingController _addressController;
   late TextEditingController _phoneController;
+  //
+  final Debouncer _debouncer = Debouncer();
+  List<dynamic> _addressSuggestions = [];
+  bool _isSearchingAddress = false;
+  String nominatimBaseUrl =
+      'https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1';
   late DateTime _startDate;
   late DateTime _endDate;
   late LatLng _selectedLocation;
@@ -47,6 +56,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
       _categoryController = TextEditingController(text: widget.event!.category);
       _nameController = TextEditingController(text: widget.event!.name);
       _addressController = TextEditingController(text: widget.event!.address);
+      _addressController.addListener(_onAddressChanged); // Yeni eklendi
       _phoneController = TextEditingController(text: widget.event!.phone);
       _startDate = widget.event!.startDate;
       _endDate = widget.event!.endDate;
@@ -79,6 +89,24 @@ class _EventFormScreenState extends State<EventFormScreen> {
     super.dispose();
   }
 
+  // Adres alanı her değiştiğinde çağrılır
+  void _onAddressChanged() {
+    if (_addressController.text.isEmpty) {
+      setState(() {
+        _addressSuggestions = [];
+        _isSearchingAddress = false;
+      });
+      return;
+    }
+    _debouncer.debounce(
+      const Duration(milliseconds: 500), // Gecikme süresini buraya ekleyin
+      () {
+        _searchAddress(_addressController.text);
+      },
+    );
+  }
+
+  // Başlangıç tarihi ve saat seçici için fonksiyon
   Future<void> _selectStartDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -108,6 +136,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
     }
   }
 
+  // Bitiş tarihi ve saat seçici için fonksiyon
   Future<void> _selectEndDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -137,6 +166,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
     }
   }
 
+  // Resim seçici için fonksiyon
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final XFile? pickedFile = await picker.pickImage(
@@ -150,6 +180,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
     }
   }
 
+  // Etkinlik bilgilerini kaydetme fonksiyonu
   Future<void> _saveEvent() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -238,6 +269,93 @@ class _EventFormScreenState extends State<EventFormScreen> {
     }
   }
 
+  // Nominatim API ile adres arama
+  Future<void> _searchAddress(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        _addressSuggestions = [];
+        _isSearchingAddress = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isSearchingAddress = true;
+    });
+
+    try {
+      final url = Uri.parse(
+        '$nominatimBaseUrl&q=${Uri.encodeComponent(query)}',
+      );
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          _addressSuggestions = data;
+        });
+      } else {
+        setState(() {
+          _addressSuggestions = [];
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Adres arama hatası: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _addressSuggestions = [];
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Adres arama başarısız: $e')));
+    } finally {
+      setState(() {
+        _isSearchingAddress = false;
+      });
+    }
+  }
+
+  // Koordinatlardan adres bilgilerini alır (Nominatim Reverse Geocoding)
+  Future<void> _getAddressFromCoordinates(LatLng latLng) async {
+    setState(() {
+      _isSearchingAddress = true; // Yükleme göstergesi
+    });
+
+    try {
+      final url = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse?format=json&lat=${latLng.latitude}&lon=${latLng.longitude}&zoom=18&addressdetails=1',
+      );
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data != null && data['display_name'] != null) {
+          setState(() {
+            _addressController.text = data['display_name'];
+          });
+        } else {
+          setState(() {
+            _addressController.text = 'Adres bulunamadı.';
+          });
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Adres çözme hatası: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Adres çözme başarısız: $e')));
+    } finally {
+      setState(() {
+        _isSearchingAddress = false; // Yükleme göstergesini kapat
+      });
+    }
+  }
+
+  // Bölüm başlıkları ve içerikleri için genel yapı
   Widget _buildSection({
     required String title,
     required List<Widget> children,
@@ -276,6 +394,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
     );
   }
 
+  // Metin alanları için genel yapı
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -328,6 +447,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
     );
   }
 
+  // Tarih seçici için genel yapı
   Widget _buildDateSelector({
     required String label,
     required DateTime date,
@@ -382,6 +502,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
     );
   }
 
+  // Genel yapı için bir metot
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -524,6 +645,72 @@ class _EventFormScreenState extends State<EventFormScreen> {
                               return null;
                             },
                           ),
+                          // Adres önerilerini göstermek için yeni kısım
+                          if (_isSearchingAddress)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8.0),
+                              child:
+                                  LinearProgressIndicator(), // Yükleniyor göstergesi
+                            ),
+                          if (_addressSuggestions.isNotEmpty &&
+                              !_isSearchingAddress &&
+                              _addressController.text.isNotEmpty)
+                            Container(
+                              constraints: BoxConstraints(
+                                maxHeight: 200,
+                              ), // Max yükseklik sınırı
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFFE5E7EB),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 5,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                physics:
+                                    ClampingScrollPhysics(), // Kaydırma davranışını düzeltir
+                                itemCount: _addressSuggestions.length,
+                                itemBuilder: (context, index) {
+                                  final suggestion = _addressSuggestions[index];
+                                  final displayName =
+                                      suggestion['display_name'];
+                                  return ListTile(
+                                    title: Text(displayName),
+                                    leading: Icon(Icons.location_on_outlined),
+                                    onTap: () {
+                                      final lat = double.parse(
+                                        suggestion['lat'],
+                                      );
+                                      final lon = double.parse(
+                                        suggestion['lon'],
+                                      );
+                                      setState(() {
+                                        _addressController.text =
+                                            displayName; // Adres alanını güncelle
+                                        _selectedLocation = LatLng(
+                                          lat,
+                                          lon,
+                                        ); // Harita konumunu güncelle
+                                        _addressSuggestions =
+                                            []; // Önerileri temizle
+                                      });
+                                      _mapController.move(
+                                        _selectedLocation,
+                                        _mapController.camera.zoom,
+                                      ); // Haritayı yeni konuma taşı
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
                         ],
                       ),
 
@@ -704,10 +891,17 @@ class _EventFormScreenState extends State<EventFormScreen> {
                                     options: MapOptions(
                                       initialCenter: _selectedLocation,
                                       initialZoom: 13.0,
-                                      onTap: (tapPosition, latLng) {
+                                      onTap: (tapPosition, latLng) async {
+                                        // async ekledik
                                         setState(() {
                                           _selectedLocation = latLng;
+                                          _addressSuggestions =
+                                              []; // Önerileri temizle
                                         });
+                                        // Tıklanan koordinatlardan adres al
+                                        await _getAddressFromCoordinates(
+                                          latLng,
+                                        ); // Yeni çağrı
                                       },
                                     ),
                                     children: [
