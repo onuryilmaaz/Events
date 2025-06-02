@@ -3,7 +3,8 @@ import '../models/event_model.dart';
 
 class EventService {
   final Dio dio = Dio();
-  final String baseUrl = 'http://10.0.2.2:5117';
+   final String baseUrl = 'http://10.0.2.2:5117';
+  // final String baseUrl = 'http://10.210.210.119:9090';
 
   Future<List<Event>> getEvents() async {
     try {
