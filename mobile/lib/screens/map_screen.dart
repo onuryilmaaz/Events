@@ -1,4 +1,4 @@
-// ignore_for_file: unused_field, unnecessary_brace_in_string_interps, curly_braces_in_flow_control_structures
+// ignore_for_file: unused_field, unnecessary_brace_in_string_interps, curly_braces_in_flow_control_structures, prefer_final_fields
 
 import 'dart:async';
 import 'dart:convert';
@@ -74,8 +74,6 @@ class _MapScreenState extends State<MapScreen>
   late AnimationController _pulseController;
   late AnimationController _routeController;
   late AnimationController _bottomSheetController;
-  Timer? _routeAnimationTimer;
-  int _currentRouteIndex = 0;
   static const double _defaultZoom = 10.0;
   static const double _detailZoom = 15.0;
   static const LatLng _defaultCenter = LatLng(40.76, 29.93);
@@ -96,7 +94,6 @@ class _MapScreenState extends State<MapScreen>
     _pulseController.dispose();
     _routeController.dispose();
     _bottomSheetController.dispose();
-    _routeAnimationTimer?.cancel();
     super.dispose();
   }
 
@@ -244,6 +241,43 @@ class _MapScreenState extends State<MapScreen>
     }).toList();
   }
 
+  // Rota üzerindeki yön okları için marker'lar oluşturur
+  List<Marker> _buildRouteArrowMarkers(
+    List<LatLng> routePoints,
+    Color arrowColor,
+  ) {
+    if (routePoints.length < 2) return [];
+
+    List<Marker> arrowMarkers = [];
+    const int step = 30;
+
+    for (int i = 0; i < routePoints.length - 1; i += step) {
+      if (i + 1 < routePoints.length) {
+        final startPoint = routePoints[i];
+        final endPoint = routePoints[i + 1];
+        final bearing = _getBearing(startPoint, endPoint);
+
+        arrowMarkers.add(
+          Marker(
+            width: 25.0,
+            height: 25.0,
+            point: startPoint,
+            rotate: true,
+            child: Transform.rotate(
+              angle: _degreesToRadians(bearing),
+              child: Icon(
+                Icons.navigation_rounded,
+                size: 25,
+                color: Colors.amber,
+              ),
+            ),
+          ),
+        );
+      }
+    }
+    return arrowMarkers;
+  }
+
   // Etkinlik alt sayfasını gösterir
   void _showEventBottomSheet(Event event) {
     setState(() {
@@ -378,7 +412,6 @@ class _MapScreenState extends State<MapScreen>
                               ),
                             ),
                             const SizedBox(height: 12),
-
                             // Tarih ve saat
                             _buildDateRow(
                               icon: Icons.not_started_outlined,
@@ -392,7 +425,7 @@ class _MapScreenState extends State<MapScreen>
                               date: dateFormat.format(event.endDate),
                             ),
                             const SizedBox(height: 20),
-                            // Yeni Kod:
+                            // Telefon numarası
                             Row(
                               children: [
                                 Icon(
@@ -430,7 +463,6 @@ class _MapScreenState extends State<MapScreen>
                               ),
                             ),
                             const SizedBox(height: 16),
-
                             // Konum
                             Row(
                               children: [
@@ -452,7 +484,6 @@ class _MapScreenState extends State<MapScreen>
                               ],
                             ),
                             const SizedBox(height: 14),
-
                             // Koordinatlar
                             Row(
                               children: [
@@ -474,7 +505,6 @@ class _MapScreenState extends State<MapScreen>
                               ],
                             ),
                             const SizedBox(height: 14),
-
                             // Etkinlik türü
                             Row(
                               children: [
@@ -496,7 +526,6 @@ class _MapScreenState extends State<MapScreen>
                               ],
                             ),
                             const SizedBox(height: 14),
-
                             // Etkinlik sahibi
                             Row(
                               children: [
@@ -578,7 +607,6 @@ class _MapScreenState extends State<MapScreen>
       _selectedEventLocation = destination;
       _alternativeRoutes = [];
       _selectedRoute = null;
-      _currentRouteIndex = 0;
     });
     _showSnackBar('Rotalar hesaplanıyor...', duration: Duration(seconds: 2));
 
@@ -596,11 +624,8 @@ class _MapScreenState extends State<MapScreen>
           _alternativeRoutes = routes;
           _selectedRoute = routes.first;
           _routePoints = [];
-          _currentRouteIndex = 0;
         });
         _showRouteSelectionBottomSheet();
-        //_startRouteAnimation();
-        //_fitBoundsToRoute();
       } else {
         _showSnackBar('Rota hesaplanamadı', isError: true);
       }
@@ -644,9 +669,6 @@ class _MapScreenState extends State<MapScreen>
                     itemCount: _alternativeRoutes.length,
                     itemBuilder: (context, index) {
                       final route = _alternativeRoutes[index];
-                      // print(
-                      //   'Rota Tipi: ${route.title}, Süre (saniye cinsinden): ${route.duration.inSeconds}',
-                      // );
                       final isSelected = _selectedRoute == route;
                       final hours = route.duration.inHours;
                       final minutes = route.duration.inMinutes % 60;
@@ -658,11 +680,9 @@ class _MapScreenState extends State<MapScreen>
                           setState(() {
                             _selectedRoute = route;
                             _routePoints = _selectedRoute!.points;
-                            _currentRouteIndex = 0;
                           });
                           setModalState(() {});
                           Navigator.pop(context);
-                          _startRouteAnimation();
                           _fitBoundsToRoute();
 
                           _showSnackBar('${route.title} rotası seçildi.');
@@ -797,9 +817,9 @@ class _MapScreenState extends State<MapScreen>
                             setState(() {
                               _selectedRoute = routeToStart;
                               _routePoints = _selectedRoute!.points;
-                              _currentRouteIndex = 0;
+                              //_currentRouteIndex = 0;
                             });
-                            _startRouteAnimation(); // Rotayı çizmeye başla
+                            //_startRouteAnimation(); // Rotayı çizmeye başla
                             _fitBoundsToRoute(); // Harita sınırlarını rotaya göre ayarla
 
                             _showSnackBar(
@@ -883,7 +903,7 @@ class _MapScreenState extends State<MapScreen>
         return RouteInfo(
           points: routePoints,
           duration: Duration(seconds: duration.toInt()),
-          distance: distance.toDouble() / 1000, // metreyi km'ye çevir
+          distance: distance.toDouble() / 1000,
           type: routeType,
           color: color,
           title: title,
@@ -894,48 +914,6 @@ class _MapScreenState extends State<MapScreen>
       _showSnackBar('Rota hesaplanırken hata: ${e.toString()}', isError: true);
     }
     return null;
-  }
-
-  // Başlatılan rota animasyonunu günceller
-  void _startRouteAnimation() {
-    _routeAnimationTimer?.cancel();
-    _currentRouteIndex = 0;
-    _routeAnimationTimer = Timer.periodic(const Duration(milliseconds: 100), (
-      timer,
-    ) {
-      if (_currentRouteIndex < _routePoints.length - 1) {
-        setState(() {
-          _currentRouteIndex++;
-        });
-      } else {
-        timer.cancel();
-        if (_selectedRoute != null && _selectedEventLocation != null) {
-          final distance = _selectedRoute!.distance.toStringAsFixed(1);
-          final duration = _formatRouteDuration(_selectedRoute!.duration);
-          String activityType;
-
-          switch (_selectedRoute!.type) {
-            case RouteType.driving:
-              activityType = 'Araç kullanarak';
-              break;
-            case RouteType.walking:
-              activityType = 'Yürüyerek';
-              break;
-            case RouteType.cycling:
-              activityType = 'Bisiklet sürerek';
-              break;
-          }
-          setState(() {
-            _completedRouteDistance = distance;
-            _completedRouteDuration = duration;
-            _completedRouteType = activityType;
-            _showRouteCompletionCard = true;
-          });
-
-          //_animateToLocation(_selectedEventLocation!, _detailZoom);
-        }
-      }
-    });
   }
 
   // Harita sınırlarını rotaya göre ayarlar
@@ -949,6 +927,34 @@ class _MapScreenState extends State<MapScreen>
     _mapController.fitCamera(
       CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)),
     );
+  }
+
+  // İki LatLng noktası arasındaki yönü (açıyı) hesaplar
+  double _getBearing(LatLng startPoint, LatLng endPoint) {
+    final double startLat = _degreesToRadians(startPoint.latitude);
+    final double startLon = _degreesToRadians(startPoint.longitude);
+    final double endLat = _degreesToRadians(endPoint.latitude);
+    final double endLon = _degreesToRadians(endPoint.longitude);
+
+    final double deltaLon = endLon - startLon;
+
+    final double y = math.sin(deltaLon) * math.cos(endLat);
+    final double x =
+        math.cos(startLat) * math.sin(endLat) -
+        math.sin(startLat) * math.cos(endLat) * math.cos(deltaLon);
+    final double bearing = math.atan2(y, x);
+
+    return (_radiansToDegrees(bearing) + 360) % 360;
+  }
+
+  // Dereceyi radyana çevirir
+  double _degreesToRadians(double degrees) {
+    return degrees * math.pi / 180;
+  }
+
+  // Radyanı dereceye çevirir
+  double _radiansToDegrees(double radians) {
+    return radians * 180 / math.pi;
   }
 
   // Etkinlik detaylarını gösterir
@@ -1003,12 +1009,10 @@ class _MapScreenState extends State<MapScreen>
     setState(() {
       _routePoints = [];
       _selectedEventLocation = null;
-      _currentRouteIndex = 0;
       _selectedRoute = null;
       _alternativeRoutes = [];
       _showRouteCompletionCard = false;
     });
-    _routeAnimationTimer?.cancel();
   }
 
   // WhatsApp'a yönlendirme fonksiyonu
@@ -1138,23 +1142,26 @@ class _MapScreenState extends State<MapScreen>
           PolylineLayer(
             polylines: [
               Polyline(
-                points: _routePoints.take(_currentRouteIndex + 1).toList(),
+                points: _routePoints,
                 strokeWidth: 7.0,
                 color: _selectedRoute!.color,
                 borderStrokeWidth: 2.0,
                 borderColor: Colors.white,
                 gradientColors: [
-                  _selectedRoute!.color.withAlpha(
-                    204,
-                  ), // withOpacity(0.8) yerine
-                  _selectedRoute!.color.withAlpha(
-                    127,
-                  ), // withOpacity(0.5) yerine
+                  _selectedRoute!.color.withAlpha(204),
+                  _selectedRoute!.color.withAlpha(127),
                 ],
               ),
             ],
           ),
         MarkerLayer(markers: allMarkers),
+        if (_routePoints.isNotEmpty && _selectedRoute != null)
+          MarkerLayer(
+            markers: _buildRouteArrowMarkers(
+              _routePoints,
+              _selectedRoute!.color,
+            ),
+          ),
       ],
     );
   }
@@ -1259,7 +1266,6 @@ class _MapScreenState extends State<MapScreen>
           ],
         ),
         child: SafeArea(
-          // Kenar boşluklarından korunmak için
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
