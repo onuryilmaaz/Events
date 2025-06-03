@@ -14,6 +14,7 @@ import '../services/event_service.dart';
 import 'event_form_screen.dart';
 import 'event_detail_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 enum MapState { loading, loaded, error }
 
@@ -268,7 +269,7 @@ class _MapScreenState extends State<MapScreen>
   }) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.grey[600]),
+        Icon(icon, size: 24, color: Colors.deepPurple),
         const SizedBox(width: 8),
         Text('$label: $date'),
       ],
@@ -336,14 +337,6 @@ class _MapScreenState extends State<MapScreen>
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Fotoğraf:',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF333333),
-                                    ),
-                                  ),
                                   const SizedBox(height: 10),
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(14),
@@ -388,18 +381,46 @@ class _MapScreenState extends State<MapScreen>
 
                             // Tarih ve saat
                             _buildDateRow(
-                              icon: Icons.play_arrow_rounded,
+                              icon: Icons.not_started_outlined,
                               label: 'Başlangıç',
                               date: dateFormat.format(event.startDate),
                             ),
                             const SizedBox(height: 8),
                             _buildDateRow(
-                              icon: Icons.stop_rounded,
+                              icon: Icons.not_started_outlined,
                               label: 'Bitiş',
                               date: dateFormat.format(event.endDate),
                             ),
                             const SizedBox(height: 20),
-
+                            // Yeni Kod:
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.phone,
+                                  size: 22,
+                                  color: Colors.deepPurple,
+                                ),
+                                const SizedBox(width: 10),
+                                GestureDetector(
+                                  onTap:
+                                      () => {
+                                        Navigator.pop(context),
+                                        _launchWhatsApp(event.phone),
+                                      }, // Buraya _launchWhatsApp fonksiyonunu çağırıyoruz
+                                  child: Text(
+                                    event.phone,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color:
+                                          Colors
+                                              .blue, // Telefon numarasının tıklanabilir olduğunu belirtmek için renk verilebilir
+                                      // Altı çizili yapmak tıklanabilir olduğunu vurgular
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
                             // Açıklama
                             Text(
                               event.decs,
@@ -988,6 +1009,41 @@ class _MapScreenState extends State<MapScreen>
       _showRouteCompletionCard = false;
     });
     _routeAnimationTimer?.cancel();
+  }
+
+  // WhatsApp'a yönlendirme fonksiyonu
+  Future<void> _launchWhatsApp(String phoneNumber) async {
+    String formattedPhoneNumber = phoneNumber.replaceAll(RegExp(r'\D'), '');
+    if (!formattedPhoneNumber.startsWith('+')) {
+      formattedPhoneNumber = '+90$formattedPhoneNumber';
+    }
+
+    final Uri whatsappUri = Uri.parse(
+      "whatsapp://send?phone=$formattedPhoneNumber",
+    );
+
+    try {
+      if (await canLaunchUrl(whatsappUri)) {
+        await launchUrl(whatsappUri);
+      } else {
+        final Uri webWhatsappUri = Uri.parse(
+          "https://wa.me/$formattedPhoneNumber",
+        );
+        if (await canLaunchUrl(webWhatsappUri)) {
+          await launchUrl(webWhatsappUri, mode: LaunchMode.externalApplication);
+        } else {
+          _showSnackBar(
+            'WhatsApp açılamadı. Cihazınızda WhatsApp yüklü olmayabilir.',
+            isError: true,
+          );
+        }
+      }
+    } catch (e) {
+      _showSnackBar(
+        'WhatsApp başlatılırken hata oluştu: ${e.toString()}',
+        isError: true,
+      );
+    }
   }
 
   // SnackBar gösterir
